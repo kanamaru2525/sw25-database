@@ -1,0 +1,212 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // urlとdirectUrlを削除（Prisma 7ではここには書かない）
+}
+
+// --- 認証モデル ---
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  discordId     String?   @unique
+  isAdmin       Boolean   @default(false)
+  accounts      Account[]
+  sessions      Session[]
+  presets       RegulationPreset[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// --- Enumの修正（改行区切りに！） ---
+
+enum RegulationType {
+  CR1
+  CR2
+  CR3
+  ET
+  ML
+  MA
+  BM
+  AL
+  RL
+  BR
+  BS
+  AB
+  BI
+  DD
+  US
+  TS
+}
+
+enum Rank {
+  B
+  A
+  S
+  SS
+}
+
+enum SpellType {
+  SHINGO
+  SOREI
+  SHINCHI
+  SHINSEI
+  MADOKI
+  YOSEI
+  SHINRA
+  SHOI
+  NARAKU
+  HIOU
+}
+
+enum FeatType {
+  PASSIVE
+  MAJOR
+  DECLARATION
+}
+
+enum SkillCategory {
+  ENHANCER
+  BARD_SONG
+  BARD_FINALE
+  RIDER
+  ALCHEMIST
+  GEOMANCER
+  WARLEADER_KOUHAI
+  WARLEADER_JINRITSU
+  DARKHUNTER
+}
+
+// --- SW2.5 モデル ---
+
+model RegulationPreset {
+  id          String           @id @default(cuid())
+  name        String
+  userId      String
+  regulations RegulationType[]
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Spell {
+  id              String         @id @default(cuid())
+  name            String
+  type            SpellType
+  level           Int
+  target          String
+  range           String
+  shape           String
+  duration        String
+  resistance      String
+  cost            String
+  attribute       String?
+  fairyAttributes String[]
+  biblioRank      Int?
+  summary         String         @db.Text
+  magisphere      Boolean        @default(false)
+  page            String
+  regulation      RegulationType
+}
+
+model Weapon {
+  id            String         @id @default(cuid())
+  name          String
+  category      String
+  rank          Rank
+  usage         String
+  minStrength   Int
+  hit           Int            @default(0)
+  power         Int
+  critical      Int            @default(10)
+  extraDamage   Int            @default(0)
+  range         Int?
+  price         Int
+  summary       String         @db.Text
+  page          String
+  regulation    RegulationType
+}
+
+model Armor {
+  id            String         @id @default(cuid())
+  name          String
+  category      String
+  rank          Rank
+  usage         String
+  minStrength   Int
+  evasion       Int            @default(0)
+  defense       Int
+  price         Int
+  summary       String         @db.Text
+  page          String
+  regulation    RegulationType
+}
+
+model CombatFeat {
+  id            String         @id @default(cuid())
+  name          String
+  type          FeatType
+  requirement   String?
+  target        String?
+  risk          String?
+  summary       String         @db.Text
+  page          String
+  regulation    RegulationType
+}
+
+model SpecialSkill {
+  id            String         @id @default(cuid())
+  category      SkillCategory
+  level         Int
+  name          String
+  duration      String?
+  resistance    String?
+  cost          String?
+  attribute     String?
+  target        String?
+  rangeShape    String?
+  summary       String         @db.Text
+  details       Json?
+  page          String
+  regulation    RegulationType
+}
