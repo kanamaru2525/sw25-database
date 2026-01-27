@@ -63,9 +63,10 @@ model VerificationToken {
 // --- Enumの修正（改行区切りに！） ---
 
 enum RegulationType {
-  CR1
-  CR2
-  CR3
+  TYPE_I   @map("Ⅰ")
+  TYPE_II  @map("Ⅱ")
+  TYPE_III @map("Ⅲ")
+  DX
   ET
   ML
   MA
