@@ -4,21 +4,18 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { prisma } from '@/lib/prisma'
 import Papa from 'papaparse'
 
-// 魔法タイプのマッピング
-const SPELL_TYPE_MAP: { [key: string]: string } = {
-  '真語魔法': 'SHINGO',
-  '操霊魔法': 'SOREI',
-  '深智魔法': 'SHINCHI',
-  '神聖魔法': 'SHINSEI',
-  '魔動機術': 'MADOKI',
-  '妖精魔法': 'YOSEI',
-  '森羅魔法': 'SHINRA',
-  '召異魔法': 'SHOI',
-  '奈落魔法': 'NARAKU',
-  '秘奥魔法': 'HIOU',
+const SKILL_CATEGORY_MAP: { [key: string]: string } = {
+  '練技': 'ENHANCER',
+  '呪歌': 'BARD_SONG',
+  '終律': 'BARD_FINALE',
+  '騎芸': 'RIDER',
+  '賦術': 'ALCHEMIST',
+  '相域': 'GEOMANCER',
+  '鼓吠': 'WARLEADER_KOUHAI',
+  '陣率': 'WARLEADER_JINRITSU',
+  '操気': 'DARKHUNTER',
 }
 
-// レギュレーションのマッピング
 const REGULATION_MAP: { [key: string]: string } = {
   'Ⅰ': 'TYPE_I',
   'Ⅱ': 'TYPE_II',
@@ -53,7 +50,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'CSVデータが必要です' }, { status: 400 })
     }
 
-    // Parse CSV
     const parsed = Papa.parse(csv, {
       header: true,
       skipEmptyLines: true,
@@ -70,52 +66,30 @@ export async function POST(request: NextRequest) {
     let successCount = 0
     const errors: string[] = []
 
-    // Process each row
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i]
       
       try {
-        // Validate required fields
-        if (!row.name || !row.type || !row.level) {
+        if (!row.name || !row.category || !row.level) {
           errors.push(`行 ${i + 2}: 必須フィールドが不足しています`)
           continue
         }
 
-        // Parse fairyAttributes (comma-separated string to array)
-        const fairyAttributes = row.fairyAttributes
-          ? row.fairyAttributes.split(',').map((s: string) => s.trim()).filter(Boolean)
-          : []
-
-        // Map type and regulation
-        const spellType = SPELL_TYPE_MAP[row.type] || row.type
+        const category = SKILL_CATEGORY_MAP[row.category] || row.category
         const regulation = REGULATION_MAP[row.regulation] || row.regulation
 
-        // Map magisphere (大/中/小 -> LARGE/MEDIUM/SMALL)
-        const MAGISPHERE_MAP: Record<string, string> = {
-          '大': 'LARGE',
-          '中': 'MEDIUM',
-          '小': 'SMALL',
-        }
-        const magisphere = row.magisphere && MAGISPHERE_MAP[row.magisphere]
-          ? MAGISPHERE_MAP[row.magisphere]
-          : null
-
-        await prisma.spell.create({
+        await prisma.specialSkill.create({
           data: {
-            name: row.name,
-            type: spellType,
+            category: category,
             level: parseInt(row.level),
-            target: row.target || '',
-            range: row.range || '',
-            shape: row.shape || '',
-            duration: row.duration || '',
-            resistance: row.resistance || '',
-            cost: row.cost || '',
+            name: row.name,
+            duration: row.duration || null,
+            resistance: row.resistance || null,
+            cost: row.cost || null,
             attribute: row.attribute || null,
-            fairyAttributes,
-            biblioRank: row.biblioRank ? parseInt(row.biblioRank) : null,
+            target: row.target || null,
+            rangeShape: row.rangeShape || null,
             summary: row.summary || '',
-            magisphere: magisphere,
             page: row.page || '',
             regulation: regulation,
           },

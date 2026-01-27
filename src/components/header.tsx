@@ -15,7 +15,9 @@ export function Header({ user }: HeaderProps) {
   return (
     <header className="border-b border-slate-700 bg-slate-800/50 backdrop-blur-sm">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">SW2.5 データベース</h1>
+        <Link href="/">
+          <h1 className="text-2xl font-bold text-white hover:text-purple-400 transition-colors cursor-pointer">SW2.5 データベース</h1>
+        </Link>
         <div className="flex items-center gap-4">
           {user.isAdmin && (
             <Link
@@ -35,6 +37,12 @@ export function Header({ user }: HeaderProps) {
             )}
             <span className="text-white">{user.name}</span>
           </div>
+          <Link
+            href="/user"
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+          >
+            マイページ
+          </Link>
           <button
             onClick={() => signOut({ callbackUrl: '/auth/signin' })}
             className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"

@@ -62,6 +62,12 @@ model VerificationToken {
 
 // --- Enumの修正（改行区切りに！） ---
 
+enum MagisphereSize {
+  LARGE   // 大
+  MEDIUM  // 中
+  SMALL   // 小
+}
+
 enum RegulationType {
   TYPE_I   @map("Ⅰ")
   TYPE_II  @map("Ⅱ")
@@ -128,6 +134,9 @@ model RegulationPreset {
   userId      String
   regulations RegulationType[]
   user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
 }
 
 model Spell {
@@ -144,8 +153,8 @@ model Spell {
   attribute       String?
   fairyAttributes String[]
   biblioRank      Int?
-  summary         String         @db.Text
-  magisphere      Boolean        @default(false)
+  summary         String          @db.Text
+  magisphere      MagisphereSize? // マギスフィア（魔動機術用）
   page            String
   regulation      RegulationType
 }
@@ -208,6 +217,16 @@ model SpecialSkill {
   rangeShape    String?
   summary       String         @db.Text
   details       Json?
+  page          String
+  regulation    RegulationType
+}
+
+model Accessory {
+  id            String         @id @default(cuid())
+  name          String
+  usage         String
+  price         Int
+  summary       String         @db.Text
   page          String
   regulation    RegulationType
 }
