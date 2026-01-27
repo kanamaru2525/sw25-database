@@ -112,10 +112,17 @@ export const authOptions: NextAuthOptions = {
       
       return true
     },
-    async session({ session, user }) {
+    async jwt({ token, user }) {
+      // 初回サインイン時はuserオブジェクトが利用可能
+      if (user) {
+        token.isAdmin = user.isAdmin
+      }
+      return token
+    },
+    async session({ session, user, token }) {
       if (session.user) {
-        session.user.id = user.id
-        session.user.isAdmin = user.isAdmin || false
+        session.user.id = user?.id || token.sub!
+        session.user.isAdmin = user?.isAdmin || token.isAdmin || false
       }
       return session
     },
@@ -125,7 +132,7 @@ export const authOptions: NextAuthOptions = {
     error: '/auth/error',
   },
   session: {
-    strategy: "database",
+    strategy: "jwt",
   },
 }
 
