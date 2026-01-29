@@ -9,6 +9,10 @@ const globalForPrisma = globalThis as unknown as {
 
 const pool = globalForPrisma.pool ?? new Pool({
   connectionString: process.env.DIRECT_URL || process.env.DATABASE_URL,
+  max: 1, // Vercel環境では接続数を制限
+  ssl: {
+    rejectUnauthorized: false,
+  },
 })
 
 const adapter = new PrismaPg(pool)
