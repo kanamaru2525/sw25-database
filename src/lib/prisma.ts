@@ -75,9 +75,18 @@ const createPrismaClient = () => {
   }
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient()
-
-// グローバルにキャッシュ（開発環境のみ）
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma
+// Lazy initialization - 実際に使用されるまでPrismaClientを作成しない
+function getPrismaClient() {
+  if (!globalForPrisma.prisma) {
+    globalForPrisma.prisma = createPrismaClient()
+  }
+  return globalForPrisma.prisma
 }
+
+// exportはgetter関数経由で行う
+export const prisma = new Proxy({} as PrismaClient, {
+  get(target, prop) {
+    const client = getPrismaClient()
+    return (client as any)[prop]
+  }
+})
