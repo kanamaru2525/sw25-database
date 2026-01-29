@@ -5,13 +5,18 @@ import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 
 export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions)
-  
-  if (!session) {
-    return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
-  }
-
   try {
+    console.log('[API /spells] Request received')
+    
+    const session = await getServerSession(authOptions)
+    
+    if (!session) {
+      console.log('[API /spells] Unauthorized - no session')
+      return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
+    }
+
+    console.log('[API /spells] Session valid, fetching data...')
+    
     const searchParams = request.nextUrl.searchParams
     
     // 複数の魔法タイプとレベルの組み合わせを取得
@@ -169,9 +174,16 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Search error:', error)
+    console.error('[API /spells] Error:', error)
+    console.error('[API /spells] Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    })
     return NextResponse.json(
-      { error: '検索処理中にエラーが発生しました' },
+      { 
+        error: '検索処理中にエラーが発生しました',
+        details: process.env.NODE_ENV !== 'production' ? (error instanceof Error ? error.message : String(error)) : undefined
+      },
       { status: 500 }
     )
   }
