@@ -27,7 +27,38 @@ const ACCESSORY_USAGES = [
   '腰',
   '足',
   '任意',
+  'なし',
 ]
+
+const ACCESSORY_USAGE_MAPPING: Record<string, string> = {
+  'ONE_HAND': '1H',
+  'TWO_HANDS': '2H',
+  'HEAD': '頭',
+  'FACE': '顔',
+  'EAR': '耳',
+  'NECK': '首',
+  'BACK': '背中',
+  'HAND': '手',
+  'WAIST': '腰',
+  'FOOT': '足',
+  'ANY': '任意',
+  'NONE': 'なし',
+}
+
+const ACCESSORY_USAGE_REVERSE: Record<string, string> = {
+  '1H': 'ONE_HAND',
+  '2H': 'TWO_HANDS',
+  '頭': 'HEAD',
+  '顔': 'FACE',
+  '耳': 'EAR',
+  '首': 'NECK',
+  '背中': 'BACK',
+  '手': 'HAND',
+  '腰': 'WAIST',
+  '足': 'FOOT',
+  '任意': 'ANY',
+  'なし': 'NONE',
+}
 
 const REGULATION_LABELS: Record<RegulationType, string> = {
   TYPE_I: 'Ⅰ',
@@ -113,10 +144,16 @@ export function AccessoryManager() {
       const url = accessory.id ? `/api/admin/accessories/${accessory.id}` : '/api/admin/accessories'
       const method = accessory.id ? 'PUT' : 'POST'
 
+      // usageを英語のenum値に変換
+      const payload = {
+        ...accessory,
+        usage: accessory.usage ? ACCESSORY_USAGE_REVERSE[accessory.usage] || accessory.usage : 'ANY'
+      }
+
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(accessory),
+        body: JSON.stringify(payload),
       })
 
       if (response.ok) {
@@ -215,7 +252,7 @@ export function AccessoryManager() {
                 {accessories.map((accessory) => (
                   <tr key={accessory.id} className="hover:bg-slate-700/30">
                     <td className="px-4 py-3 text-white">{accessory.name}</td>
-                    <td className="px-4 py-3 text-slate-300">{accessory.usage}</td>
+                    <td className="px-4 py-3 text-slate-300">{ACCESSORY_USAGE_MAPPING[accessory.usage] || accessory.usage}</td>
                     <td className="px-4 py-3 text-slate-300">{accessory.price}G</td>
                     <td className="px-4 py-3 text-slate-300">
                       {REGULATION_LABELS[accessory.regulation as RegulationType] || accessory.regulation}
@@ -301,8 +338,14 @@ function AccessoryForm({
   onSave: (accessory: Partial<Accessory>) => void
   onCancel: () => void
 }) {
-  const [formData, setFormData] = useState<Partial<Accessory>>(
-    accessory || {
+  const [formData, setFormData] = useState<Partial<Accessory>>(() => {
+    if (accessory) {
+      return {
+        ...accessory,
+        usage: ACCESSORY_USAGE_MAPPING[accessory.usage] || accessory.usage
+      }
+    }
+    return {
       name: '',
       usage: '',
       price: 0,
@@ -310,7 +353,7 @@ function AccessoryForm({
       page: '',
       regulation: 'TYPE_I',
     }
-  )
+  })
   const [isSaving, setIsSaving] = useState(false)
 
   const handleSubmit = async () => {

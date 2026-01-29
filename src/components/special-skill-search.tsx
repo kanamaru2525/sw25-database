@@ -7,8 +7,8 @@ type RegulationType = 'ALL' | 'TYPE_I' | 'TYPE_II' | 'TYPE_III' | 'DX' | 'ET' | 
 
 interface SpecialSkill {
   id: string
-  category: string
-  level: number
+  categoryCode: string
+  level: number | null
   name: string
   duration: string | null
   resistance: string | null
@@ -19,6 +19,9 @@ interface SpecialSkill {
   summary: string
   page: string
   regulation: string
+  category?: {
+    name: string
+  }
 }
 
 interface RegulationPreset {
@@ -82,6 +85,7 @@ export function SpecialSkillSearch() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string>('')
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [regulations, setRegulations] = useState<Array<{ code: string; name: string }>>([])
 
   // プリセットを取得
   useEffect(() => {
@@ -102,9 +106,25 @@ export function SpecialSkillSearch() {
     fetchPresets()
   }, [])
 
+  // レギュレーションを取得
+  useEffect(() => {
+    const fetchRegulations = async () => {
+      try {
+        const response = await fetch('/api/regulations')
+        const data = await response.json()
+        setRegulations(data.regulations.map((r: { code: string; name: string }) => ({ code: r.code, name: r.name })))
+      } catch (error) {
+        console.error('Failed to fetch regulations:', error)
+      }
+    }
+    fetchRegulations()
+  }, [])
+
   const handleCopy = async (skill: SpecialSkill) => {
+    const regulationName = regulations.find((r) => r.code === skill.regulation)?.name || skill.regulation
+    const categoryName = skill.category?.name || SKILL_CATEGORY_LABELS[skill.categoryCode as SkillCategory] || skill.categoryCode
     const text = `${skill.name}
-${SKILL_CATEGORY_LABELS[skill.category as SkillCategory] || skill.category} Lv.${skill.level} ${REGULATION_LABELS[skill.regulation as RegulationType] || skill.regulation}${skill.duration ? ` / 持続時間:${skill.duration}` : ''}${skill.resistance ? ` / 抵抗:${skill.resistance}` : ''}${skill.cost ? ` / 消費:${skill.cost}` : ''}${skill.attribute ? ` / 属性:${skill.attribute}` : ''}${skill.target ? ` / 対象:${skill.target}` : ''}${skill.rangeShape ? ` / 射程/形状:${skill.rangeShape}` : ''}`
+${categoryName} Lv.${skill.level ?? '-'} ${regulationName}${skill.duration ? ` / 持続時間:${skill.duration}` : ''}${skill.resistance ? ` / 抵抗:${skill.resistance}` : ''}${skill.cost ? ` / 消費:${skill.cost}` : ''}${skill.attribute ? ` / 属性:${skill.attribute}` : ''}${skill.target ? ` / 対象:${skill.target}` : ''}${skill.rangeShape ? ` / 射程/形状:${skill.rangeShape}` : ''}`
 
     try {
       await navigator.clipboard.writeText(text)
@@ -160,17 +180,17 @@ ${SKILL_CATEGORY_LABELS[skill.category as SkillCategory] || skill.category} Lv.$
   return (
     <div className="space-y-6">
       {/* 検索フィルタ */}
-      <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
+      <div className="bg-[#303027]/50 backdrop-blur-sm rounded-xl p-6 border border-[#6d6d6d]">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
           {/* カテゴリ */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium text-[#efefef] mb-2">
               カテゴリ
             </label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value as SkillCategory)}
-              className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d]"
             >
               {Object.entries(SKILL_CATEGORY_LABELS).map(([value, label]) => (
                 <option key={value} value={value}>
@@ -182,13 +202,13 @@ ${SKILL_CATEGORY_LABELS[skill.category as SkillCategory] || skill.category} Lv.$
 
           {/* レベル */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium text-[#efefef] mb-2">
               レベル
             </label>
             <select
               value={level}
               onChange={(e) => setLevel(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d]"
             >
               <option value="">すべて</option>
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map((lv) => (
@@ -201,13 +221,13 @@ ${SKILL_CATEGORY_LABELS[skill.category as SkillCategory] || skill.category} Lv.$
 
           {/* レギュレーション */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium text-[#efefef] mb-2">
               レギュレーション
             </label>
             <select
               value={selectedPresetId}
               onChange={(e) => setSelectedPresetId(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d]"
             >
               <option value="ALL">すべて</option>
               {Array.isArray(presets) && presets.map((preset) => (
@@ -221,7 +241,7 @@ ${SKILL_CATEGORY_LABELS[skill.category as SkillCategory] || skill.category} Lv.$
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-2">
+          <label className="block text-sm font-medium text-[#efefef] mb-2">
             技能名
           </label>
           <div className="flex gap-2">
@@ -230,12 +250,12 @@ ${SKILL_CATEGORY_LABELS[skill.category as SkillCategory] || skill.category} Lv.$
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="技能名で検索"
-              className="flex-1 px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="flex-1 px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] placeholder-[#6d6d6d] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d]"
             />
             <button
               onClick={handleSearch}
               disabled={loading}
-              className="px-6 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-600 text-white rounded-lg transition-colors"
+              className="px-6 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#303027] text-[#efefef] hover:text-[#303027] disabled:text-[#6d6d6d] rounded-lg transition-colors"
             >
               検索
             </button>
@@ -245,21 +265,21 @@ ${SKILL_CATEGORY_LABELS[skill.category as SkillCategory] || skill.category} Lv.$
 
       {/* エラー表示 */}
       {error && (
-        <div className="bg-red-500/20 border border-red-500 rounded-lg p-4 text-red-200">
+        <div className="bg-[#303027]/20 border border-[#6d6d6d] rounded-lg p-4 text-[#efefef]">
           {error}
         </div>
       )}
 
       {/* 検索結果 */}
       {loading ? (
-        <div className="text-center py-12 text-slate-400">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto"></div>
+        <div className="text-center py-12 text-[#6d6d6d]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#6d6d6d] mx-auto"></div>
           <p className="mt-4">検索中...</p>
         </div>
       ) : result ? (
         <div className="space-y-4">
           {/* 検索結果サマリー */}
-          <div className="text-slate-300">
+          <div className="text-[#6d6d6d]">
             {result.pagination.total}件の技能が見つかりました
           </div>
 
@@ -268,7 +288,7 @@ ${SKILL_CATEGORY_LABELS[skill.category as SkillCategory] || skill.category} Lv.$
             {result.skills.map((skill) => (
               <div
                 key={skill.id}
-                className="bg-slate-800/50 backdrop-blur-sm rounded-lg p-5 border border-slate-700 hover:border-purple-500/50 transition-colors"
+                className="bg-[#303027]/50 backdrop-blur-sm rounded-lg p-5 border border-[#6d6d6d] hover:border-[#efefef]/50 transition-colors"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
@@ -277,10 +297,10 @@ ${SKILL_CATEGORY_LABELS[skill.category as SkillCategory] || skill.category} Lv.$
                     </h3>
                     <div className="flex gap-3 text-sm text-slate-400">
                       <span className="inline-flex items-center px-2 py-1 bg-purple-500/20 text-purple-300 rounded">
-                        {SKILL_CATEGORY_LABELS[skill.category as SkillCategory] || skill.category}
+                        {skill.category?.name || SKILL_CATEGORY_LABELS[skill.categoryCode as SkillCategory] || skill.categoryCode}
                       </span>
-                      <span>Lv.{skill.level}</span>
-                      <span>{REGULATION_LABELS[skill.regulation as RegulationType] || skill.regulation}</span>
+                      <span>Lv.{skill.level ?? '-'}</span>
+                      <span>{regulations.find((r) => r.code === skill.regulation)?.name || skill.regulation}</span>
                       <span className="text-slate-500">{skill.page}</span>
                     </div>
                   </div>

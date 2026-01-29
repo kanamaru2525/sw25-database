@@ -20,11 +20,12 @@ export default async function CombatFeatsImportPage() {
     'risk',
     'summary',
     'page',
-    'regulation'
+    'regulation',
+    'vagrancy'
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-[#303027] via-[#6d6d6d] to-[#303027]">
       <Header user={session.user} />
 
       <main className="container mx-auto px-4 py-12">
@@ -40,6 +41,11 @@ export default async function CombatFeatsImportPage() {
           title="特技データインポート"
           description="特技データをCSVファイルから一括登録します。"
           sampleHeaders={sampleHeaders}
+          fieldNotes={[
+            { field: 'type', note: 'PASSIVE, MAJOR, DECLARATION' },
+            { field: 'vagrancy', note: 'ヴァグランツかどうか。true/false または 1/0' },
+            { field: 'regulation', note: 'Ⅰ, Ⅱ, Ⅲ, DX, ET, ML, MA, BM, AL, RL, BR, BS, AB, BI, DD, US, TS, AZ' }
+          ]}
         />
       </main>
     </div>

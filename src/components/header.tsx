@@ -13,21 +13,22 @@ interface HeaderProps {
 
 export function Header({ user }: HeaderProps) {
   return (
-    <header className="border-b border-slate-700 bg-slate-800/50 backdrop-blur-sm">
-      <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <Link href="/">
-          <h1 className="text-2xl font-bold text-white hover:text-purple-400 transition-colors cursor-pointer">SW2.5 データベース</h1>
+    <header className="border-b border-[#6d6d6d] bg-[#303027]/50 backdrop-blur-sm" suppressHydrationWarning>
+      <div className="container mx-auto px-4 py-4 flex items-center justify-between" suppressHydrationWarning>
+        <Link href="/" suppressHydrationWarning>
+          <h1 className="text-2xl font-bold text-[#efefef] hover:text-[#6d6d6d] transition-colors cursor-pointer" suppressHydrationWarning>SW2.5 データベース</h1>
         </Link>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4" suppressHydrationWarning>
           {user.isAdmin && (
             <Link
               href="/admin"
-              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+              className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] text-[#efefef] hover:text-[#303027] rounded-lg transition-colors"
+              suppressHydrationWarning
             >
               管理者画面
             </Link>
           )}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" suppressHydrationWarning>
             {user.image && (
               <img
                 src={user.image}
@@ -35,17 +36,19 @@ export function Header({ user }: HeaderProps) {
                 className="w-8 h-8 rounded-full"
               />
             )}
-            <span className="text-white">{user.name}</span>
+            <span className="text-[#efefef]" suppressHydrationWarning>{user.name}</span>
           </div>
           <Link
             href="/user"
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] text-[#efefef] hover:text-[#303027] rounded-lg transition-colors"
+            suppressHydrationWarning
           >
             マイページ
           </Link>
           <button
             onClick={() => signOut({ callbackUrl: '/auth/signin' })}
-            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+            className="px-4 py-2 bg-[#303027] hover:bg-[#6d6d6d] text-[#efefef] border border-[#6d6d6d] rounded-lg transition-colors"
+            suppressHydrationWarning
           >
             ログアウト
           </button>

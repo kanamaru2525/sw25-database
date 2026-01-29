@@ -8,13 +8,13 @@ export async function PUT(
 ) {
   try {
     const params = await context.params
-    const id = parseInt(params.id)
+    const id = params.id
     const data = await request.json()
 
     const skill = await prisma.specialSkill.update({
       where: { id },
       data: {
-        category: data.category,
+        categoryCode: data.category,
         level: data.level ? parseInt(data.level) : null,
         name: data.name,
         duration: data.duration || null,
@@ -25,7 +25,9 @@ export async function PUT(
         rangeShape: data.rangeShape || null,
         summary: data.summary,
         page: data.page,
-        regulation: data.regulation,
+        regulation: data.regulation || 'TYPE_I', // 空文字列の場合はデフォルト値を設定
+        // カスタムフィールド（JSON形式）
+        customFields: data.customFields || null,
       },
     })
 
@@ -46,7 +48,7 @@ export async function DELETE(
 ) {
   try {
     const params = await context.params
-    const id = parseInt(params.id)
+    const id = params.id
 
     await prisma.specialSkill.delete({
       where: { id },

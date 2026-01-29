@@ -31,6 +31,7 @@ export async function PUT(
         cost: data.cost,
         attribute: data.attribute || null,
         fairyAttributes: data.fairyAttributes || [],
+        deity: data.deity || null,
         biblioRank: data.biblioRank ? parseInt(data.biblioRank) : null,
         summary: data.summary,
         magisphere: data.magisphere || null,

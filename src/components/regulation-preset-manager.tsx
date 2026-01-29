@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 
 interface RegulationPreset {
   id: string
@@ -9,25 +10,10 @@ interface RegulationPreset {
   createdAt: Date
 }
 
-const REGULATION_OPTIONS = [
-  { value: 'TYPE_I', label: 'Ⅰ' },
-  { value: 'TYPE_II', label: 'Ⅱ' },
-  { value: 'TYPE_III', label: 'Ⅲ' },
-  { value: 'DX', label: 'DX' },
-  { value: 'ET', label: 'ET' },
-  { value: 'ML', label: 'ML' },
-  { value: 'MA', label: 'MA' },
-  { value: 'BM', label: 'BM' },
-  { value: 'AL', label: 'AL' },
-  { value: 'RL', label: 'RL' },
-  { value: 'BR', label: 'BR' },
-  { value: 'BS', label: 'BS' },
-  { value: 'AB', label: 'AB' },
-  { value: 'BI', label: 'BI' },
-  { value: 'DD', label: 'DD' },
-  { value: 'US', label: 'US' },
-  { value: 'TS', label: 'TS' },
-]
+interface Regulation {
+  code: string
+  name: string
+}
 
 export default function RegulationPresetManager({
   initialPresets,
@@ -35,6 +21,7 @@ export default function RegulationPresetManager({
   initialPresets: RegulationPreset[]
 }) {
   const [presets, setPresets] = useState<RegulationPreset[]>(initialPresets)
+  const [regulations, setRegulations] = useState<Regulation[]>([])
   const [isCreating, setIsCreating] = useState(false)
   const [editingPreset, setEditingPreset] = useState<RegulationPreset | null>(null)
   const [formData, setFormData] = useState({
@@ -45,6 +32,23 @@ export default function RegulationPresetManager({
     message: string
     type: 'success' | 'error'
   } | null>(null)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    fetchRegulations()
+  }, [])
+
+  const fetchRegulations = async () => {
+    try {
+      const response = await fetch('/api/regulations')
+      const data = await response.json()
+      setRegulations(data.regulations || [])
+    } catch (error) {
+      console.error('Failed to fetch regulations:', error)
+      setRegulations([])
+    }
+  }
 
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type })
@@ -93,10 +97,16 @@ export default function RegulationPresetManager({
         : '/api/user/regulation-presets'
       const method = editingPreset ? 'PUT' : 'POST'
 
+      // 基本レギュレーション（Ⅰ、Ⅱ、Ⅲ、DX）を自動追加
+      const baseRegulations = regulations
+        .filter(r => ['Ⅰ', 'Ⅱ', 'Ⅲ', 'DX'].includes(r.code))
+        .map(r => r.code)
+      const allRegulations = [...new Set([...baseRegulations, ...formData.regulations])]
+
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, regulations: allRegulations }),
       })
 
       if (!response.ok) throw new Error('Failed to save')
@@ -140,16 +150,6 @@ export default function RegulationPresetManager({
     }))
   }
 
-  const copyToClipboard = (preset: RegulationPreset) => {
-    const params = new URLSearchParams({
-      regulations: preset.regulations.join(','),
-    })
-    const url = `${window.location.origin}/search?${params.toString()}`
-    
-    navigator.clipboard.writeText(url)
-    showToast('検索URLをコピーしました', 'success')
-  }
-
   return (
     <div>
       {/* Toast通知 */}
@@ -189,13 +189,6 @@ export default function RegulationPresetManager({
                 <h3 className="text-xl font-bold text-white">{preset.name}</h3>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => copyToClipboard(preset)}
-                    className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors text-sm"
-                    title="検索URLをコピー"
-                  >
-                    URLコピー
-                  </button>
-                  <button
                     onClick={() => openModal(preset)}
                     className="px-3 py-1 bg-yellow-600 hover:bg-yellow-700 text-white rounded transition-colors text-sm"
                   >
@@ -203,7 +196,7 @@ export default function RegulationPresetManager({
                   </button>
                   <button
                     onClick={() => handleDelete(preset.id)}
-                    className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded transition-colors text-sm"
+                    className="px-3 py-1 bg-[#a44949] hover:bg-[#b85656] text-white rounded transition-colors text-sm"
                   >
                     削除
                   </button>
@@ -211,8 +204,8 @@ export default function RegulationPresetManager({
               </div>
               <div className="flex flex-wrap gap-2">
                 {preset.regulations.map((reg) => {
-                  const label =
-                    REGULATION_OPTIONS.find((o) => o.value === reg)?.label || reg
+                  const regulation = regulations.find((r) => r.code === reg)
+                  const label = regulation ? `${regulation.code} - ${regulation.name}` : reg
                   return (
                     <span
                       key={reg}
@@ -229,15 +222,17 @@ export default function RegulationPresetManager({
       </div>
 
       {/* モーダル */}
-      {isCreating && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 rounded-xl p-6 max-w-2xl w-full border border-slate-700">
-            <h2 className="text-2xl font-bold text-white mb-6">
-              {editingPreset ? 'プリセット編集' : 'プリセット作成'}
-            </h2>
+      {isCreating && mounted && createPortal(
+        <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-[9999] p-4 pt-8 overflow-y-auto">
+          <div className="bg-slate-800 rounded-xl max-w-2xl w-full border border-slate-700 max-h-[90vh] flex flex-col">
+            <div className="p-6 border-b border-slate-700">
+              <h2 className="text-2xl font-bold text-white">
+                {editingPreset ? 'プリセット編集' : 'プリセット作成'}
+              </h2>
+            </div>
 
-            <form onSubmit={handleSubmit}>
-              <div className="space-y-4">
+            <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+              <div className="space-y-4 p-6 overflow-y-auto flex-1">
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">
                     プリセット名 *
@@ -256,33 +251,34 @@ export default function RegulationPresetManager({
 
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">
-                    レギュレーション選択 *
+                    追加レギュレーション選択
                   </label>
+                  <p className="text-xs text-slate-400 mb-3">
+                    ※ Ⅰ, Ⅱ, Ⅲ, DXは基本レギュレーションとして自動的に含まれます
+                  </p>
                   <div className="grid grid-cols-4 gap-2">
-                    {REGULATION_OPTIONS.map((option) => (
+                    {regulations
+                      .filter(r => !['Ⅰ', 'Ⅱ', 'Ⅲ', 'DX'].includes(r.code))
+                      .map((regulation) => (
                       <button
-                        key={option.value}
+                        key={regulation.code}
                         type="button"
-                        onClick={() => toggleRegulation(option.value)}
+                        onClick={() => toggleRegulation(regulation.code)}
                         className={`px-3 py-2 rounded transition-colors ${
-                          formData.regulations.includes(option.value)
+                          formData.regulations.includes(regulation.code)
                             ? 'bg-purple-600 text-white'
                             : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                         }`}
+                        title={regulation.name}
                       >
-                        {option.label}
+                        {regulation.code}
                       </button>
                     ))}
                   </div>
-                  {formData.regulations.length === 0 && (
-                    <p className="text-red-400 text-sm mt-2">
-                      少なくとも1つのレギュレーションを選択してください
-                    </p>
-                  )}
                 </div>
               </div>
 
-              <div className="mt-6 flex justify-end gap-2">
+              <div className="p-6 border-t border-slate-700 flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={closeModal}
@@ -292,15 +288,15 @@ export default function RegulationPresetManager({
                 </button>
                 <button
                   type="submit"
-                  disabled={formData.regulations.length === 0}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
                 >
                   保存
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

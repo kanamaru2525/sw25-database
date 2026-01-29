@@ -78,6 +78,7 @@ export function WeaponManager() {
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+  const [regulations, setRegulations] = useState<Array<{ code: string; name: string }>>([])
 
   const fetchWeapons = async () => {
     setLoading(true)
@@ -103,6 +104,19 @@ export function WeaponManager() {
   useEffect(() => {
     fetchWeapons()
   }, [page, search, categoryFilter, rankFilter, regulationFilter])
+
+  useEffect(() => {
+    const fetchRegulations = async () => {
+      try {
+        const response = await fetch('/api/regulations')
+        const data = await response.json()
+        setRegulations(data.regulations.map((r: { code: string; name: string }) => ({ code: r.code, name: r.name })))
+      } catch (error) {
+        console.error('Failed to fetch regulations:', error)
+      }
+    }
+    fetchRegulations()
+  }, [])
 
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type })
@@ -214,8 +228,8 @@ export function WeaponManager() {
               className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded text-white"
             >
               <option value="">すべて</option>
-              {Object.entries(REGULATION_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
+              {regulations.map((reg) => (
+                <option key={reg.code} value={reg.code}>{reg.code} - {reg.name}</option>
               ))}
             </select>
           </div>
@@ -271,7 +285,7 @@ export function WeaponManager() {
                     <td className="px-4 py-3 text-slate-300">{weapon.rank}</td>
                     <td className="px-4 py-3 text-slate-300">{weapon.usage}</td>
                     <td className="px-4 py-3 text-slate-300">
-                      {REGULATION_LABELS[weapon.regulation as RegulationType] || weapon.regulation}
+                      {regulations.find((r) => r.code === weapon.regulation)?.name || weapon.regulation}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <button
@@ -282,7 +296,7 @@ export function WeaponManager() {
                       </button>
                       <button
                         onClick={() => handleDelete(weapon.id)}
-                        className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded"
+                        className="px-3 py-1 bg-[#a44949] hover:bg-[#b85656] text-white text-sm rounded"
                       >
                         削除
                       </button>
@@ -320,6 +334,7 @@ export function WeaponManager() {
       {(editingWeapon || isCreating) && (
         <WeaponForm
           weapon={editingWeapon}
+          regulations={regulations}
           onSave={handleSave}
           onCancel={() => {
             setEditingWeapon(null)
@@ -347,10 +362,12 @@ export function WeaponManager() {
 
 function WeaponForm({
   weapon,
+  regulations,
   onSave,
   onCancel,
 }: {
   weapon: Weapon | null
+  regulations: Array<{ code: string; name: string }>
   onSave: (weapon: Partial<Weapon>) => void
   onCancel: () => void
 }) {
@@ -527,9 +544,13 @@ function WeaponForm({
                 onChange={(e) => setFormData({ ...formData, regulation: e.target.value })}
                 className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded text-white"
               >
-                {Object.entries(REGULATION_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
+                {regulations.length === 0 ? (
+                  <option>読み込み中...</option>
+                ) : (
+                  regulations.map((reg) => (
+                    <option key={reg.code} value={reg.code}>{reg.code} - {reg.name}</option>
+                  ))
+                )}
               </select>
             </div>
           </div>

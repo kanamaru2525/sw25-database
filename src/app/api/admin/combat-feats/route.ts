@@ -1,13 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+// マップ値をenum値に変換
+const mapToEnumValue = (code: string): string => {
+  const mapping: Record<string, string> = {
+    'Ⅰ': 'TYPE_I',
+    'Ⅱ': 'TYPE_II',
+    'Ⅲ': 'TYPE_III',
+  }
+  return mapping[code] || code
+}
+
 // GET: 特技一覧取得
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
     const search = searchParams.get('search') || ''
+    const includeVagrancy = searchParams.get('includeVagrancy') === 'true'
 
-    const where = search
+    const where: any = search
       ? {
           OR: [
             { name: { contains: search } },
@@ -15,6 +26,11 @@ export async function GET(request: NextRequest) {
           ],
         }
       : {}
+
+    // ヴァグランツを含めない場合はフィルタリング
+    if (!includeVagrancy) {
+      where.vagrancy = false
+    }
 
     const feats = await prisma.combatFeat.findMany({
       where,
@@ -48,7 +64,8 @@ export async function POST(request: NextRequest) {
         risk: data.risk || null,
         summary: data.summary,
         page: data.page,
-        regulation: data.regulation,
+        regulation: mapToEnumValue(data.regulation) as any,
+        vagrancy: data.vagrancy || false,
       },
     })
 

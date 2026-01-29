@@ -7,9 +7,10 @@ interface CSVImportProps {
   title: string
   description: string
   sampleHeaders: string[]
+  fieldNotes?: { field: string; note: string }[]
 }
 
-export function CSVImport({ endpoint, title, description, sampleHeaders }: CSVImportProps) {
+export function CSVImport({ endpoint, title, description, sampleHeaders, fieldNotes }: CSVImportProps) {
   const [file, setFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<{ success: boolean; message: string; count?: number } | null>(null)
@@ -76,9 +77,20 @@ export function CSVImport({ endpoint, title, description, sampleHeaders }: CSVIm
         <div className="bg-slate-900/50 rounded-lg p-4 mb-6">
           <h3 className="text-lg font-semibold text-white mb-2">CSVフォーマット</h3>
           <p className="text-sm text-slate-400 mb-2">以下のヘッダーを含むCSVファイルをアップロードしてください：</p>
-          <code className="text-sm text-green-400 block bg-slate-950 p-3 rounded overflow-x-auto">
+          <code className="text-sm text-green-400 block bg-slate-950 p-3 rounded overflow-x-auto whitespace-pre-wrap break-all">
             {sampleHeaders.join(',')}
           </code>
+          
+          {fieldNotes && fieldNotes.length > 0 && (
+            <div className="mt-4 space-y-2">
+              <h4 className="text-sm font-semibold text-white">フィールド説明：</h4>
+              {fieldNotes.map((note, index) => (
+                <div key={index} className="text-xs text-slate-400">
+                  <span className="text-green-400 font-mono">{note.field}</span>: {note.note}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

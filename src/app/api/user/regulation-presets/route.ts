@@ -3,6 +3,16 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { prisma } from '@/lib/prisma'
 
+// マップ値をenum値に変換
+const mapToEnumValue = (code: string): string => {
+  const mapping: Record<string, string> = {
+    'Ⅰ': 'TYPE_I',
+    'Ⅱ': 'TYPE_II',
+    'Ⅲ': 'TYPE_III',
+  }
+  return mapping[code] || code
+}
+
 // GET: ユーザーのプリセット一覧取得
 export async function GET(request: NextRequest) {
   try {
@@ -43,12 +53,15 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await request.json()
+    
+    // マップ値をenum値に変換
+    const enumRegulations = data.regulations.map(mapToEnumValue)
 
     const preset = await prisma.regulationPreset.create({
       data: {
         userId: session.user.id,
         name: data.name,
-        regulations: data.regulations,
+        regulations: enumRegulations as any,
       },
     })
 

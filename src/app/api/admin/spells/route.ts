@@ -15,10 +15,36 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
     const search = searchParams.get('search') || ''
+    const type = searchParams.get('type') || ''
+    const level = searchParams.get('level') || ''
+    const deity = searchParams.get('deity') || ''
+    const regulation = searchParams.get('regulation') || ''
 
-    const where = search ? {
-      name: { contains: search }
-    } : {}
+    const where: any = {}
+    
+    if (search) {
+      where.name = { contains: search }
+    }
+    
+    if (type) {
+      where.type = type
+    }
+    
+    if (level) {
+      where.level = parseInt(level)
+    }
+    
+    if (deity) {
+      if (deity === 'NONE') {
+        where.deity = null
+      } else {
+        where.deity = deity
+      }
+    }
+    
+    if (regulation) {
+      where.regulation = regulation
+    }
 
     const [spells, total] = await Promise.all([
       prisma.spell.findMany({
@@ -75,6 +101,7 @@ export async function POST(request: NextRequest) {
         cost: data.cost,
         attribute: data.attribute || null,
         fairyAttributes: data.fairyAttributes || [],
+        deity: data.deity || null,
         biblioRank: data.biblioRank ? parseInt(data.biblioRank) : null,
         summary: data.summary,
         magisphere: data.magisphere || null,

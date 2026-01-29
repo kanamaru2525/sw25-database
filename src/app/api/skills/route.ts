@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
     const featType = searchParams.get('featType')
     const regulation = searchParams.get('regulation')
     const name = searchParams.get('name')
+    const includeVagrancy = searchParams.get('includeVagrancy') === 'true'
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '50')
 
@@ -33,6 +34,11 @@ export async function GET(request: NextRequest) {
       where.name = {
         contains: name,
       }
+    }
+
+    // ヴァグランツを含めない場合はフィルタリング
+    if (!includeVagrancy) {
+      where.vagrancy = false
     }
 
     const [feats, total] = await Promise.all([

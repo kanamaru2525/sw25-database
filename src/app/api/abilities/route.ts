@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     const where: Prisma.SpecialSkillWhereInput = {}
 
     if (category && category !== 'ALL') {
-      where.category = category as any
+      where.categoryCode = category as any
     }
 
     if (level) {
@@ -43,8 +43,15 @@ export async function GET(request: NextRequest) {
     const [skills, total] = await Promise.all([
       prisma.specialSkill.findMany({
         where,
+        include: {
+          category: {
+            select: {
+              name: true,
+            },
+          },
+        },
         orderBy: [
-          { category: 'asc' },
+          { categoryCode: 'asc' },
           { level: 'asc' },
           { name: 'asc' },
         ],

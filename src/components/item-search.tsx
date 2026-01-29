@@ -120,6 +120,25 @@ const ARMOR_CATEGORIES = [
   '金属鎧',
   '盾',
 ]
+const ACCESSORY_CATEGORIES = [
+  '1H',
+  '2H',
+  '頭',
+  '顔',
+  '耳',
+  '首',
+  '背中',
+  '手',
+  '腰',
+  '足',
+  '任意',
+  'なし',
+]
+
+// 用法を表示用に変換
+const formatUsage = (usage: string): string => {
+  return usage === 'NONE' ? '-' : usage
+}
 
 export function ItemSearch() {
   const [itemType, setItemType] = useState<ItemType>('weapon')
@@ -128,10 +147,14 @@ export function ItemSearch() {
   const [selectedPresetId, setSelectedPresetId] = useState<string>('ALL')
   const [presets, setPresets] = useState<RegulationPreset[]>([])
   const [name, setName] = useState<string>('')
+  const [price, setPrice] = useState<string>('')
+  const [priceAbove, setPriceAbove] = useState(false)
+  const [priceBelow, setPriceBelow] = useState(false)
   const [result, setResult] = useState<SearchResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string>('')
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [regulations, setRegulations] = useState<Array<{ code: string; name: string }>>([])
 
   // プリセットを取得
   useEffect(() => {
@@ -152,18 +175,33 @@ export function ItemSearch() {
     fetchPresets()
   }, [])
 
+  // レギュレーションを取得
+  useEffect(() => {
+    const fetchRegulations = async () => {
+      try {
+        const response = await fetch('/api/regulations')
+        const data = await response.json()
+        setRegulations(data.regulations.map((r: { code: string; name: string }) => ({ code: r.code, name: r.name })))
+      } catch (error) {
+        console.error('Failed to fetch regulations:', error)
+      }
+    }
+    fetchRegulations()
+  }, [])
+
   const handleCopy = async (item: Item) => {
+    const regulationDisplay = REGULATION_LABELS[item.regulation as RegulationType] || item.regulation
     let text = `${item.name}\n`
     
     if (item.itemType === 'weapon') {
-      text += `武器 / ${item.category} / ランク${item.rank} / ${REGULATION_LABELS[item.regulation as RegulationType] || item.regulation}\n`
-      text += `用法:${item.usage} / 必筋:${item.minStrength} / 命中:${item.hit > 0 ? '+' : ''}${item.hit} / 威力:${item.power} / C値:${item.critical} / 追加D:${item.extraDamage}${item.range ? ` / 射程:${item.range}m` : ''} / 価格:${item.price}G`
+      text += `武器 / ${item.category} / ランク${item.rank} / ${regulationDisplay}\n`
+      text += `用法:${formatUsage(item.usage)} / 必筋:${item.minStrength} / 命中:${item.hit > 0 ? '+' : ''}${item.hit} / 威力:${item.power} / C値:${item.critical} / 追加D:${item.extraDamage}${item.range ? ` / 射程:${item.range}m` : ''} / 価格:${item.price}G`
     } else if (item.itemType === 'armor') {
-      text += `防具 / ${item.category} / ランク${item.rank} / ${REGULATION_LABELS[item.regulation as RegulationType] || item.regulation}\n`
-      text += `用法:${item.usage} / 必筋:${item.minStrength} / 回避:${item.evasion > 0 ? '+' : ''}${item.evasion} / 防護:${item.defense} / 価格:${item.price}G`
+      text += `防具 / ${item.category} / ランク${item.rank} / ${regulationDisplay}\n`
+      text += `用法:${formatUsage(item.usage)} / 必筋:${item.minStrength} / 回避:${item.evasion > 0 ? '+' : ''}${item.evasion} / 防護:${item.defense} / 価格:${item.price}G`
     } else {
-      text += `装備品 / ${REGULATION_LABELS[item.regulation as RegulationType] || item.regulation}\n`
-      text += `用法:${item.usage} / 価格:${item.price}G`
+      text += `装備品 / ${regulationDisplay}\n`
+      text += `用法:${formatUsage(item.usage)} / 価格:${item.price}G`
     }
 
     try {
@@ -197,6 +235,12 @@ export function ItemSearch() {
       
       if (name) params.append('name', name)
       
+      if (price) {
+        params.append('price', price)
+        if (priceAbove) params.append('priceAbove', 'true')
+        if (priceBelow) params.append('priceBelow', 'true')
+      }
+      
       const response = await fetch(`/api/items?${params.toString()}`)
       
       if (!response.ok) {
@@ -227,91 +271,95 @@ export function ItemSearch() {
   const getCategoryOptions = () => {
     if (itemType === 'weapon') return WEAPON_CATEGORIES
     if (itemType === 'armor') return ARMOR_CATEGORIES
+    if (itemType === 'accessory') return ACCESSORY_CATEGORIES
     return []
   }
 
   const categoryOptions = getCategoryOptions()
-  const showCategorySelect = itemType === 'weapon' || itemType === 'armor'
+  const showCategorySelect = itemType === 'weapon' || itemType === 'armor' || itemType === 'accessory'
+  const showRankSelect = itemType === 'weapon' || itemType === 'armor'
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" suppressHydrationWarning>
       {/* 検索フィルタ */}
-      <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
+      <div className="bg-[#303027]/50 backdrop-blur-sm rounded-xl p-6 border border-[#6d6d6d]" suppressHydrationWarning>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
           {/* アイテム種別 */}
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+          <div suppressHydrationWarning>
+            <label className="block text-sm font-medium text-[#efefef] mb-2" suppressHydrationWarning>
               種別
             </label>
             <select
               value={itemType}
               onChange={(e) => setItemType(e.target.value as ItemType)}
-              className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d]"
+              suppressHydrationWarning
             >
-              <option value="weapon">武器</option>
-              <option value="armor">防具</option>
-              <option value="accessory">装備品</option>
+              <option value="weapon" suppressHydrationWarning>武器</option>
+              <option value="armor" suppressHydrationWarning>防具</option>
+              <option value="accessory" suppressHydrationWarning>装備品</option>
             </select>
           </div>
 
           {/* カテゴリ */}
-          {showCategorySelect ? (
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                カテゴリ
+          <div suppressHydrationWarning>
+            <label className="block text-sm font-medium text-[#efefef] mb-2" suppressHydrationWarning>
+              {itemType === 'accessory' ? '用法' : 'カテゴリ'}
+            </label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d]"
+              suppressHydrationWarning
+            >
+              <option value="" suppressHydrationWarning>すべて</option>
+              {categoryOptions.map((cat) => (
+                <option key={cat} value={cat} suppressHydrationWarning>{cat}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* ランク */}
+          {showRankSelect ? (
+            <div suppressHydrationWarning>
+              <label className="block text-sm font-medium text-[#efefef] mb-2" suppressHydrationWarning>
+                ランク
               </label>
               <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                value={rank}
+                onChange={(e) => setRank(e.target.value as Rank)}
+                className="w-full px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d]"
               >
-                <option value="">すべて</option>
-                {categoryOptions.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
+                {Object.entries(RANK_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
                 ))}
               </select>
             </div>
           ) : (
             <div className="opacity-50 pointer-events-none">
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                カテゴリ
+              <label className="block text-sm font-medium text-[#efefef] mb-2">
+                ランク
               </label>
               <select
                 disabled
-                className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-slate-500"
+                className="w-full px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#6d6d6d]"
               >
                 <option>-</option>
               </select>
             </div>
           )}
 
-          {/* ランク */}
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              ランク
-            </label>
-            <select
-              value={rank}
-              onChange={(e) => setRank(e.target.value as Rank)}
-              className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-            >
-              {Object.entries(RANK_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </div>
-
           {/* レギュレーションプリセット */}
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+          <div suppressHydrationWarning>
+            <label className="block text-sm font-medium text-[#efefef] mb-2" suppressHydrationWarning>
               レギュレーション
             </label>
             <select
               value={selectedPresetId}
               onChange={(e) => setSelectedPresetId(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d]"
             >
               <option value="ALL">すべて</option>
               {Array.isArray(presets) && presets.map((preset) => (
@@ -325,8 +373,8 @@ export function ItemSearch() {
 
         {/* 名前検索 */}
         <div className="flex gap-2">
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+          <div className="flex-1" suppressHydrationWarning>
+            <label className="block text-sm font-medium text-[#efefef] mb-2" suppressHydrationWarning>
               名前
             </label>
             <input
@@ -334,14 +382,55 @@ export function ItemSearch() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="名前で検索"
-              className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] placeholder-[#6d6d6d] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d]"
             />
           </div>
-          <div className="pt-7">
+          <div className="flex-1" suppressHydrationWarning>
+            <label className="block text-sm font-medium text-[#efefef] mb-2" suppressHydrationWarning>
+              価格
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                placeholder="価格で検索"
+                className="flex-1 px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] placeholder-[#6d6d6d] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d]"
+              />
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-1 text-sm text-[#efefef] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={priceAbove}
+                    onChange={(e) => {
+                      setPriceAbove(e.target.checked)
+                      if (e.target.checked) setPriceBelow(false)
+                    }}
+                    className="w-4 h-4"
+                  />
+                  以上
+                </label>
+                <label className="flex items-center gap-1 text-sm text-[#efefef] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={priceBelow}
+                    onChange={(e) => {
+                      setPriceBelow(e.target.checked)
+                      if (e.target.checked) setPriceAbove(false)
+                    }}
+                    className="w-4 h-4"
+                  />
+                  以下
+                </label>
+              </div>
+            </div>
+          </div>
+          <div className="pt-7" suppressHydrationWarning>
             <button
               onClick={handleSearch}
               disabled={loading}
-              className="px-6 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-600 text-white rounded-lg transition-colors h-[42px]"
+              className="px-6 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#303027] text-[#efefef] hover:text-[#303027] disabled:text-[#6d6d6d] rounded-lg transition-colors"
+              suppressHydrationWarning
             >
               検索
             </button>
@@ -351,21 +440,21 @@ export function ItemSearch() {
 
       {/* エラー表示 */}
       {error && (
-        <div className="bg-red-500/20 border border-red-500 rounded-lg p-4 text-red-200">
+        <div className="bg-[#303027]/20 border border-[#6d6d6d] rounded-lg p-4 text-[#efefef]">
           {error}
         </div>
       )}
 
       {/* 検索結果 */}
       {loading ? (
-        <div className="text-center py-12 text-slate-400">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto"></div>
+        <div className="text-center py-12 text-[#6d6d6d]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#6d6d6d] mx-auto"></div>
           <p className="mt-4">検索中...</p>
         </div>
       ) : result ? (
         <div className="space-y-4">
           {/* 検索結果サマリー */}
-          <div className="text-slate-300">
+          <div className="text-[#6d6d6d]">
             {result.pagination.total}件のアイテムが見つかりました
           </div>
 
@@ -374,15 +463,15 @@ export function ItemSearch() {
             {result.items.map((item) => (
               <div
                 key={item.id}
-                className="bg-slate-800/50 backdrop-blur-sm rounded-lg p-5 border border-slate-700 hover:border-purple-500/50 transition-colors"
+                className="bg-[#303027]/50 backdrop-blur-sm rounded-lg p-5 border border-[#6d6d6d] hover:border-[#efefef]/50 transition-colors"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
-                    <h3 className="text-xl font-bold text-white mb-1">
+                    <h3 className="text-xl font-bold text-[#efefef] mb-1">
                       {item.name}
                     </h3>
-                    <div className="flex gap-3 text-sm text-slate-400">
-                      <span className="inline-flex items-center px-2 py-1 bg-purple-500/20 text-purple-300 rounded">
+                    <div className="flex gap-3 text-sm text-[#6d6d6d]">
+                      <span className="inline-flex items-center px-2 py-1 bg-[#6d6d6d]/20 text-[#efefef] rounded">
                         {item.itemType === 'weapon' ? '武器' : item.itemType === 'armor' ? '防具' : '装備品'}
                       </span>
                       {(item.itemType === 'weapon' || item.itemType === 'armor') && (
@@ -392,12 +481,12 @@ export function ItemSearch() {
                         </>
                       )}
                       <span>{REGULATION_LABELS[item.regulation as RegulationType] || item.regulation}</span>
-                      <span className="text-slate-500">{item.page}</span>
+                      <span className="text-[#6d6d6d]">{item.page}</span>
                     </div>
                   </div>
                   <button
                     onClick={() => handleCopy(item)}
-                    className="ml-4 px-3 py-2 bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 hover:text-white rounded transition-colors text-sm flex items-center gap-2"
+                    className="ml-4 px-3 py-2 bg-[#6d6d6d]/50 hover:bg-[#efefef]/50 text-[#efefef] hover:text-[#303027] rounded transition-colors text-sm flex items-center gap-2"
                     title="情報をコピー"
                   >
                     {copiedId === item.id ? (
@@ -418,70 +507,70 @@ export function ItemSearch() {
                   </button>
                 </div>
 
-                <div className="text-sm text-slate-300 mb-3 flex flex-wrap gap-x-3 gap-y-1">
+                <div className="text-sm text-[#6d6d6d] mb-3 flex flex-wrap gap-x-3 gap-y-1">
                   <span>
-                    <span className="text-slate-400">用法:</span>
-                    <span className="ml-1 text-white">{item.usage}</span>
+                    <span className="text-[#6d6d6d]">用法:</span>
+                    <span className="ml-1 text-[#efefef]">{formatUsage(item.usage)}</span>
                   </span>
-                  <span className="text-slate-600">/</span>
+                  <span className="text-[#6d6d6d]">/</span>
                   <span>
-                    <span className="text-slate-400">必筋:</span>
-                    <span className="ml-1 text-white">{item.minStrength}</span>
+                    <span className="text-[#6d6d6d]">必筋:</span>
+                    <span className="ml-1 text-[#efefef]">{item.minStrength}</span>
                   </span>
                   {item.itemType === 'weapon' ? (
                     <>
-                      <span className="text-slate-600">/</span>
+                      <span className="text-[#6d6d6d]">/</span>
                       <span>
-                        <span className="text-slate-400">命中:</span>
-                        <span className="ml-1 text-white">{item.hit > 0 ? '+' : ''}{item.hit}</span>
+                        <span className="text-[#6d6d6d]">命中:</span>
+                        <span className="ml-1 text-[#efefef]">{item.hit > 0 ? '+' : ''}{item.hit}</span>
                       </span>
-                      <span className="text-slate-600">/</span>
+                      <span className="text-[#6d6d6d]">/</span>
                       <span>
-                        <span className="text-slate-400">威力:</span>
-                        <span className="ml-1 text-white">{item.power}</span>
+                        <span className="text-[#6d6d6d]">威力:</span>
+                        <span className="ml-1 text-[#efefef]">{item.power}</span>
                       </span>
-                      <span className="text-slate-600">/</span>
+                      <span className="text-[#6d6d6d]">/</span>
                       <span>
-                        <span className="text-slate-400">C値:</span>
-                        <span className="ml-1 text-white">{item.critical}</span>
+                        <span className="text-[#6d6d6d]">C値:</span>
+                        <span className="ml-1 text-[#efefef]">{item.critical}</span>
                       </span>
-                      <span className="text-slate-600">/</span>
+                      <span className="text-[#6d6d6d]">/</span>
                       <span>
-                        <span className="text-slate-400">追加D:</span>
-                        <span className="ml-1 text-white">{item.extraDamage}</span>
+                        <span className="text-[#6d6d6d]">追加D:</span>
+                        <span className="ml-1 text-[#efefef]">{item.extraDamage}</span>
                       </span>
                       {item.range && (
                         <>
-                          <span className="text-slate-600">/</span>
+                          <span className="text-[#6d6d6d]">/</span>
                           <span>
-                            <span className="text-slate-400">射程:</span>
-                            <span className="ml-1 text-white">{item.range}m</span>
+                            <span className="text-[#6d6d6d]">射程:</span>
+                            <span className="ml-1 text-[#efefef]">{item.range}m</span>
                           </span>
                         </>
                       )}
                     </>
                   ) : (
                     <>
-                      <span className="text-slate-600">/</span>
+                      <span className="text-[#6d6d6d]">/</span>
                       <span>
-                        <span className="text-slate-400">回避:</span>
-                        <span className="ml-1 text-white">{item.evasion > 0 ? '+' : ''}{item.evasion}</span>
+                        <span className="text-[#6d6d6d]">回避:</span>
+                        <span className="ml-1 text-[#efefef]">{item.evasion > 0 ? '+' : ''}{item.evasion}</span>
                       </span>
-                      <span className="text-slate-600">/</span>
+                      <span className="text-[#6d6d6d]">/</span>
                       <span>
-                        <span className="text-slate-400">防護:</span>
-                        <span className="ml-1 text-white">{item.defense}</span>
+                        <span className="text-[#6d6d6d]">防護:</span>
+                        <span className="ml-1 text-[#efefef]">{item.defense}</span>
                       </span>
                     </>
                   )}
-                  <span className="text-slate-600">/</span>
+                  <span className="text-[#6d6d6d]">/</span>
                   <span>
-                    <span className="text-slate-400">価格:</span>
-                    <span className="ml-1 text-white">{item.price}G</span>
+                    <span className="text-[#6d6d6d]">価格:</span>
+                    <span className="ml-1 text-[#efefef]">{item.price}G</span>
                   </span>
                 </div>
 
-                <div className="text-sm text-slate-300 mt-4 pt-4 border-t border-slate-700 leading-relaxed">
+                <div className="text-sm text-[#6d6d6d] mt-4 pt-4 border-t border-[#6d6d6d] leading-relaxed">
                   {item.summary}
                 </div>
               </div>
@@ -490,7 +579,7 @@ export function ItemSearch() {
 
           {/* ページネーション情報 */}
           {result.pagination.totalPages > 1 && (
-            <div className="text-center text-slate-400">
+            <div className="text-center text-[#6d6d6d]">
               ページ {result.pagination.page} / {result.pagination.totalPages}
             </div>
           )}

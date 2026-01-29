@@ -19,7 +19,7 @@ export default async function UserPage() {
   })
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-[#303027] via-[#6d6d6d] to-[#303027]">
       <Header user={session.user} />
 
       <main className="container mx-auto px-4 py-12">
@@ -27,8 +27,8 @@ export default async function UserPage() {
 
         <div className="space-y-8">
           {/* ユーザー情報 */}
-          <section className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
-            <h2 className="text-2xl font-bold text-white mb-4">ユーザー情報</h2>
+          <section className="bg-[#303027]/50 backdrop-blur-sm rounded-xl p-6 border border-[#6d6d6d]">
+            <h2 className="text-2xl font-bold text-[#efefef] mb-4">ユーザー情報</h2>
             <div className="space-y-2">
               <div className="flex items-center gap-4">
                 {session.user.image && (
@@ -39,8 +39,8 @@ export default async function UserPage() {
                   />
                 )}
                 <div>
-                  <p className="text-white text-xl">{session.user.name}</p>
-                  <p className="text-slate-400">{session.user.email}</p>
+                  <p className="text-[#efefef] text-xl">{session.user.name}</p>
+                  <p className="text-[#6d6d6d]">{session.user.email}</p>
                   {session.user.isAdmin && (
                     <span className="inline-block mt-2 px-3 py-1 bg-purple-600 text-white text-sm rounded-full">
                       管理者
@@ -52,9 +52,9 @@ export default async function UserPage() {
           </section>
 
           {/* レギュレーションプリセット */}
-          <section className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
-            <h2 className="text-2xl font-bold text-white mb-4">レギュレーションプリセット</h2>
-            <p className="text-slate-300 mb-6">
+          <section className="bg-[#303027]/50 backdrop-blur-sm rounded-xl p-6 border border-[#6d6d6d]">
+            <h2 className="text-2xl font-bold text-[#efefef] mb-4">レギュレーションプリセット</h2>
+            <p className="text-[#6d6d6d] mb-6">
               よく使うレギュレーションの組み合わせを保存して、検索時に素早く適用できます。
             </p>
             <RegulationPresetManager initialPresets={presets} />

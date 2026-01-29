@@ -22,7 +22,7 @@ export default async function AccessoriesImportPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-[#303027] via-[#6d6d6d] to-[#303027]">
       <Header user={session.user} />
 
       <main className="container mx-auto px-4 py-12">
@@ -38,6 +38,11 @@ export default async function AccessoriesImportPage() {
           title="装備品データインポート"
           description="装備品データをCSVファイルから一括登録します。"
           sampleHeaders={sampleHeaders}
+          fieldNotes={[
+            { field: 'usage', note: '使用箇所や使用方法。空欄可' },
+            { field: 'price', note: '価格（数値）' },
+            { field: 'regulation', note: 'Ⅰ, Ⅱ, Ⅲ, DX, ET, ML, MA, BM, AL, RL, BR, BS, AB, BI, DD, US, TS, AZ' }
+          ]}
         />
       </main>
     </div>

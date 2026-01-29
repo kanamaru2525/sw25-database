@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+// マップ値をenum値に変換
+const mapToEnumValue = (code: string): string => {
+  const mapping: Record<string, string> = {
+    'Ⅰ': 'TYPE_I',
+    'Ⅱ': 'TYPE_II',
+    'Ⅲ': 'TYPE_III',
+  }
+  return mapping[code] || code
+}
+
 // PUT: 特技更新
 export async function PUT(
   request: NextRequest,
@@ -8,7 +18,7 @@ export async function PUT(
 ) {
   try {
     const params = await context.params
-    const id = parseInt(params.id)
+    const id = params.id
     const data = await request.json()
 
     const feat = await prisma.combatFeat.update({
@@ -21,7 +31,8 @@ export async function PUT(
         risk: data.risk || null,
         summary: data.summary,
         page: data.page,
-        regulation: data.regulation,
+        regulation: mapToEnumValue(data.regulation) as any,
+        vagrancy: data.vagrancy || false,
       },
     })
 
@@ -42,7 +53,7 @@ export async function DELETE(
 ) {
   try {
     const params = await context.params
-    const id = parseInt(params.id)
+    const id = params.id
 
     await prisma.combatFeat.delete({
       where: { id },

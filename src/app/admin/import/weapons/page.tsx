@@ -30,7 +30,7 @@ export default async function WeaponsImportPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-[#303027] via-[#6d6d6d] to-[#303027]">
       <Header user={session.user} />
 
       <main className="container mx-auto px-4 py-12">
@@ -46,6 +46,11 @@ export default async function WeaponsImportPage() {
           title="武器データインポート"
           description="武器データをCSVファイルから一括登録します。"
           sampleHeaders={sampleHeaders}
+          fieldNotes={[
+            { field: 'rank', note: 'B, A, S, SS または空欄' },
+            { field: '数値フィールド', note: 'minStrength, hit, power, critical, extraDamage, range, price は数値または空欄' },
+            { field: 'regulation', note: 'Ⅰ, Ⅱ, Ⅲ, DX, ET, ML, MA, BM, AL, RL, BR, BS, AB, BI, DD, US, TS, AZ' }
+          ]}
         />
       </main>
     </div>

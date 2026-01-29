@@ -24,6 +24,7 @@ export default async function SpellsImportPage() {
     'cost',
     'attribute',
     'fairyAttributes',
+    'deity',
     'biblioRank',
     'summary',
     'magisphere',
@@ -32,7 +33,7 @@ export default async function SpellsImportPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-[#303027] via-[#6d6d6d] to-[#303027]">
       <Header user={session.user} />
 
       <main className="container mx-auto px-4 py-12">
@@ -48,6 +49,14 @@ export default async function SpellsImportPage() {
           title="魔法データインポート"
           description="魔法データをCSVファイルから一括登録します。"
           sampleHeaders={sampleHeaders}
+          fieldNotes={[
+            { field: 'type', note: 'SHINGO, SOREI, SHINCHI, SHINSEI, MADOKI, YOSEI, SHINRA, SHOI, NARAKU, HIOU' },
+            { field: 'fairyAttributes', note: '姖精魔法の属性。カンマ区切りで複数指定（例: 土,水氷,火）。空欄可' },
+            { field: 'deity', note: '神聖魔法の神の名前。空欄で全神共通' },
+            { field: 'biblioRank', note: '魔導書ランク。数値または空欄' },
+            { field: 'magisphere', note: 'LARGE, MEDIUM, SMALL または空欄' },
+            { field: 'regulation', note: 'Ⅰ, Ⅱ, Ⅲ, DX, ET, ML, MA, BM, AL, RL, BR, BS, AB, BI, DD, US, TS, AZ' }
+          ]}
         />
       </main>
     </div>

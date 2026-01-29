@@ -4,19 +4,41 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
 type SkillCategory =
-  | 'MAGIC'
-  | 'MAGIC_ITEM'
-  | 'CEREMONY'
-  | 'MAGIC_USER'
-  | 'ALCHEMY'
-  | 'ENCHANTER'
-  | 'ARTS'
-  | 'FAMILIAR'
-  | 'OTHER'
+  | 'ENHANCER'
+  | 'BARD_SONG'
+  | 'BARD_FINALE'
+  | 'RIDER'
+  | 'ALCHEMIST'
+  | 'GEOMANCER'
+  | 'WARLEADER_KOUHAI'
+  | 'WARLEADER_JINRITSU'
+  | 'DARKHUNTER'
+
+type FieldType = 'BOOLEAN' | 'TEXT' | 'NUMBER' | 'SELECT' | 'TEXTAREA'
+
+interface SkillFieldConfig {
+  id: string
+  categoryId: string
+  fieldKey: string
+  fieldLabel: string
+  fieldType: FieldType
+  placeholder: string | null
+  options: any
+  order: number
+  required: boolean
+}
+
+interface SkillCategoryConfig {
+  id: string
+  code: SkillCategory
+  name: string
+  order: number
+  customFields: SkillFieldConfig[]
+}
 
 interface SpecialSkill {
-  id: number
-  category: SkillCategory
+  id: string
+  categoryCode: SkillCategory
   level: number | null
   name: string
   duration: string | null
@@ -28,36 +50,18 @@ interface SpecialSkill {
   summary: string
   page: string
   regulation: string
+  customFields: Record<string, any> | null
+  category?: SkillCategoryConfig
 }
-
-const SKILL_CATEGORY_LABELS: Record<SkillCategory, string> = {
-  MAGIC: '魔法',
-  MAGIC_ITEM: '魔法のアイテム',
-  CEREMONY: 'セレモニー',
-  MAGIC_USER: '魔法使い',
-  ALCHEMY: '練技',
-  ENCHANTER: '賦術',
-  ARTS: '呪歌',
-  FAMILIAR: '騎芸',
-  OTHER: 'その他',
-}
-
-const SKILL_CATEGORIES: SkillCategory[] = [
-  'MAGIC',
-  'MAGIC_ITEM',
-  'CEREMONY',
-  'MAGIC_USER',
-  'ALCHEMY',
-  'ENCHANTER',
-  'ARTS',
-  'FAMILIAR',
-  'OTHER',
-]
 
 export default function SpecialSkillManager() {
   const [skills, setSkills] = useState<SpecialSkill[]>([])
+  const [categories, setCategories] = useState<SkillCategoryConfig[]>([])
+  const [regulations, setRegulations] = useState<Array<{ code: string; name: string }>>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState<string>('ALL')
+  const [regulationFilter, setRegulationFilter] = useState<string>('ALL')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingSkill, setEditingSkill] = useState<SpecialSkill | null>(null)
   const [isSaving, setIsSaving] = useState(false)
@@ -66,8 +70,22 @@ export default function SpecialSkillManager() {
     type: 'success' | 'error'
   } | null>(null)
 
-  const [formData, setFormData] = useState<Partial<SpecialSkill>>({
-    category: 'MAGIC',
+  const [formData, setFormData] = useState<{
+    category: SkillCategory
+    level: number | null
+    name: string
+    duration: string
+    resistance: string
+    cost: string
+    attribute: string
+    target: string
+    rangeShape: string
+    summary: string
+    page: string
+    regulation: string
+    customFields: Record<string, any>
+  }>({
+    category: 'ENHANCER',
     level: null,
     name: '',
     duration: '',
@@ -79,6 +97,7 @@ export default function SpecialSkillManager() {
     summary: '',
     page: '',
     regulation: '',
+    customFields: {},
   })
 
   const showToast = (message: string, type: 'success' | 'error') => {
@@ -86,40 +105,95 @@ export default function SpecialSkillManager() {
     setTimeout(() => setToast(null), 3000)
   }
 
+  // レギュレーションを取得
+  const fetchRegulations = async () => {
+    try {
+      const response = await fetch('/api/regulations')
+      if (response.ok) {
+        const data = await response.json()
+        setRegulations(data.regulations.map((r: any) => ({ code: r.code, name: r.name })))
+      }
+    } catch (error) {
+      console.error('Failed to fetch regulations:', error)
+    }
+  }
+
+  useEffect(() => {
+    fetchRegulations()
+  }, [])
+
+  // カテゴリー設定を取得
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('/api/admin/special-skills/categories')
+      const data = await response.json()
+      setCategories(data.categories)
+    } catch (error) {
+      console.error('Failed to fetch categories:', error)
+      showToast('カテゴリー設定の取得に失敗しました', 'error')
+    }
+  }
+
   const fetchSkills = async () => {
     try {
       setLoading(true)
-      const params = new URLSearchParams({
-        search,
-      })
+      const params = new URLSearchParams()
+      if (search) params.append('search', search)
+      if (categoryFilter !== 'ALL') params.append('category', categoryFilter)
+      if (regulationFilter !== 'ALL') params.append('regulation', regulationFilter)
+      
       const response = await fetch(`/api/admin/special-skills?${params}`)
       const data = await response.json()
-      setSkills(data.skills)
+      setSkills(data.skills || [])
     } catch (error) {
       console.error('Failed to fetch skills:', error)
       showToast('データの取得に失敗しました', 'error')
+      setSkills([])
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
+    fetchCategories()
+  }, [])
+
+  useEffect(() => {
     fetchSkills()
-  }, [search])
+  }, [search, categoryFilter, regulationFilter])
 
   const handleSearch = (value: string) => {
     setSearch(value)
-    setPage(1)
+  }
+
+  // 選択されたカテゴリーのフィールド設定を取得
+  const getSelectedCategoryFields = () => {
+    const category = categories.find((c) => c.code === formData.category)
+    return category?.customFields || []
   }
 
   const openModal = (skill?: SpecialSkill) => {
     if (skill) {
       setEditingSkill(skill)
-      setFormData(skill)
+      setFormData({
+        category: skill.categoryCode,
+        level: skill.level,
+        name: skill.name,
+        duration: skill.duration || '',
+        resistance: skill.resistance || '',
+        cost: skill.cost || '',
+        attribute: skill.attribute || '',
+        target: skill.target || '',
+        rangeShape: skill.rangeShape || '',
+        summary: skill.summary,
+        page: skill.page,
+        regulation: skill.regulation,
+        customFields: skill.customFields || {},
+      })
     } else {
       setEditingSkill(null)
       setFormData({
-        category: 'MAGIC',
+        category: 'ENHANCER',
         level: null,
         name: '',
         duration: '',
@@ -131,6 +205,7 @@ export default function SpecialSkillManager() {
         summary: '',
         page: '',
         regulation: '',
+        customFields: {},
       })
     }
     setIsModalOpen(true)
@@ -140,7 +215,7 @@ export default function SpecialSkillManager() {
     setIsModalOpen(false)
     setEditingSkill(null)
     setFormData({
-      category: 'MAGIC',
+      category: 'ENHANCER',
       level: null,
       name: '',
       duration: '',
@@ -152,6 +227,18 @@ export default function SpecialSkillManager() {
       summary: '',
       page: '',
       regulation: '',
+      customFields: {},
+    })
+  }
+
+  // カスタムフィールドの値を更新
+  const updateCustomField = (fieldKey: string, value: any) => {
+    setFormData({
+      ...formData,
+      customFields: {
+        ...formData.customFields,
+        [fieldKey]: value,
+      },
     })
   }
 
@@ -210,8 +297,8 @@ export default function SpecialSkillManager() {
       {/* Toast通知 */}
       {toast && (
         <div
-          className={`fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg text-white animate-slide-up ${
-            toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+          className={`fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg text-[#efefef] animate-slide-up ${
+            toast.type === 'success' ? 'bg-[#6d6d6d]' : 'bg-[#303027] border border-[#6d6d6d]'
           }`}
         >
           {toast.message}
@@ -222,80 +309,108 @@ export default function SpecialSkillManager() {
       <div className="flex justify-between items-center">
         <Link
           href="/admin"
-          className="text-purple-400 hover:text-purple-300"
+          className="text-[#6d6d6d] hover:text-[#efefef]"
         >
           ← 管理者画面に戻る
         </Link>
         <div className="flex gap-4">
           <Link
             href="/admin/import/special-skills"
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] text-[#efefef] hover:text-[#303027] rounded-lg transition-colors"
           >
             CSVインポート
           </Link>
           <button
             onClick={() => openModal()}
-            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+            className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] text-[#efefef] hover:text-[#303027] rounded-lg transition-colors"
           >
             新規追加
           </button>
         </div>
       </div>
 
-      {/* 検索 */}
-      <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-4 border border-slate-700">
-        <input
-          type="text"
-          placeholder="名前で検索..."
-          value={search}
-          onChange={(e) => handleSearch(e.target.value)}
-          className="w-full px-4 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
-        />
+      {/* 検索・フィルター */}
+      <div className="bg-[#303027]/50 backdrop-blur-sm rounded-xl p-4 border border-[#6d6d6d]">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <input
+            type="text"
+            placeholder="名前で検索..."
+            value={search}
+            onChange={(e) => handleSearch(e.target.value)}
+            className="px-4 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded-lg text-[#efefef] placeholder-[#6d6d6d] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d]"
+          />
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className="px-4 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded-lg text-[#efefef] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d]"
+          >
+            <option value="ALL">すべてのカテゴリー</option>
+            {categories.map((cat) => (
+              <option key={cat.code} value={cat.code}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
+          <select
+            value={regulationFilter}
+            onChange={(e) => setRegulationFilter(e.target.value)}
+            className="px-4 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded-lg text-[#efefef] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d]"
+          >
+            <option value="ALL">すべてのレギュレーション</option>
+            <option value="TYPE_I">Ⅰ</option>
+            <option value="TYPE_II">Ⅱ</option>
+            <option value="TYPE_III">Ⅲ</option>
+            <option value="DX">DX</option>
+            <option value="ET">ET</option>
+            <option value="ML">ML</option>
+            <option value="MA">MA</option>
+            <option value="BM">BM</option>
+            <option value="AL">AL</option>
+          </select>
+        </div>
       </div>
 
       {/* データ一覧 */}
       {loading ? (
-        <div className="text-center py-12 text-slate-400">読み込み中...</div>
+        <div className="text-center py-12 text-[#6d6d6d]">読み込み中...</div>
       ) : (
         <>
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700 overflow-hidden">
+          <div className="bg-[#303027]/50 backdrop-blur-sm rounded-xl border border-[#6d6d6d] overflow-hidden">
             <table className="w-full">
-              <thead className="bg-slate-700/50">
+              <thead className="bg-[#6d6d6d]/50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">ID</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">名前</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">カテゴリー</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">レベル</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">対象</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">射程</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">レギュレーション</th>
-                  <th className="px-4 py-3 text-right text-sm font-medium text-slate-300">操作</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-[#efefef]">名前</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-[#efefef]">カテゴリー</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-[#efefef]">レベル</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-[#efefef]">対象</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-[#efefef]">射程</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-[#efefef]">レギュレーション</th>
+                  <th className="px-4 py-3 text-right text-sm font-medium text-[#efefef]">操作</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-700">
+              <tbody className="divide-y divide-[#6d6d6d]">
                 {skills.map((skill) => (
-                  <tr key={skill.id} className="hover:bg-slate-700/30">
-                    <td className="px-4 py-3 text-white">{skill.id}</td>
-                    <td className="px-4 py-3 text-white">{skill.name}</td>
-                    <td className="px-4 py-3 text-slate-300">
-                      {SKILL_CATEGORY_LABELS[skill.category]}
+                  <tr key={skill.id} className="hover:bg-[#6d6d6d]/30">
+                    <td className="px-4 py-3 text-[#efefef]">{skill.name}</td>
+                    <td className="px-4 py-3 text-[#6d6d6d]">
+                      {skill.category?.name || skill.categoryCode}
                     </td>
-                    <td className="px-4 py-3 text-slate-300">{skill.level || '-'}</td>
-                    <td className="px-4 py-3 text-slate-300">{skill.target || '-'}</td>
-                    <td className="px-4 py-3 text-slate-300">
+                    <td className="px-4 py-3 text-[#6d6d6d]">{skill.level || '-'}</td>
+                    <td className="px-4 py-3 text-[#6d6d6d]">{skill.target || '-'}</td>
+                    <td className="px-4 py-3 text-[#6d6d6d]">
                       {skill.rangeShape || '-'}
                     </td>
-                    <td className="px-4 py-3 text-slate-300">{skill.regulation}</td>
+                    <td className="px-4 py-3 text-[#6d6d6d]">{skill.regulation}</td>
                     <td className="px-4 py-3 text-right">
                       <button
                         onClick={() => openModal(skill)}
-                        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors mr-2"
+                        className="px-3 py-1 bg-[#6d6d6d] hover:bg-[#efefef] text-[#efefef] hover:text-[#303027] rounded-lg transition-colors mr-2"
                       >
                         編集
                       </button>
                       <button
                         onClick={() => handleDelete(skill.id)}
-                        className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                        className="px-3 py-1 bg-[#a44949] hover:bg-[#b85656] text-white rounded-lg transition-colors"
                       >
                         削除
                       </button>
@@ -310,15 +425,15 @@ export default function SpecialSkillManager() {
 
       {/* モーダル */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-slate-800 rounded-xl p-6 max-w-3xl w-full my-8 border border-slate-700">
-            <h2 className="text-2xl font-bold text-white mb-6">
+        <div className="fixed inset-0 bg-black/70 flex items-start justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-[#303027] rounded-xl p-6 max-w-3xl w-full my-8 border border-[#6d6d6d] max-h-[calc(100vh-4rem)] overflow-y-auto">
+            <h2 className="text-2xl font-bold text-[#efefef] mb-6">
               {editingSkill ? 'その他技能編集' : 'その他技能作成'}
             </h2>
             <form onSubmit={handleSubmit}>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-[#efefef] mb-2">
                     名前 *
                   </label>
                   <input
@@ -327,13 +442,13 @@ export default function SpecialSkillManager() {
                     onChange={(e) =>
                       setFormData({ ...formData, name: e.target.value })
                     }
-                    className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded text-white"
+                    className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-[#efefef] mb-2">
                     カテゴリー *
                   </label>
                   <select
@@ -342,21 +457,22 @@ export default function SpecialSkillManager() {
                       setFormData({
                         ...formData,
                         category: e.target.value as SkillCategory,
+                        customFields: {}, // カテゴリー変更時にカスタムフィールドをクリア
                       })
                     }
-                    className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded text-white"
+                    className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
                     required
                   >
-                    {SKILL_CATEGORIES.map((category) => (
-                      <option key={category} value={category}>
-                        {SKILL_CATEGORY_LABELS[category]}
+                    {categories.map((category) => (
+                      <option key={category.code} value={category.code}>
+                        {category.name}
                       </option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-[#efefef] mb-2">
                     レベル
                   </label>
                   <input
@@ -368,13 +484,13 @@ export default function SpecialSkillManager() {
                         level: e.target.value ? parseInt(e.target.value) : null,
                       })
                     }
-                    className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded text-white"
+                    className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
                     placeholder="オプション"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-[#efefef] mb-2">
                     持続時間
                   </label>
                   <input
@@ -383,12 +499,12 @@ export default function SpecialSkillManager() {
                     onChange={(e) =>
                       setFormData({ ...formData, duration: e.target.value })
                     }
-                    className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded text-white"
+                    className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-[#efefef] mb-2">
                     抵抗
                   </label>
                   <input
@@ -400,12 +516,12 @@ export default function SpecialSkillManager() {
                         resistance: e.target.value,
                       })
                     }
-                    className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded text-white"
+                    className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-[#efefef] mb-2">
                     コスト
                   </label>
                   <input
@@ -414,12 +530,12 @@ export default function SpecialSkillManager() {
                     onChange={(e) =>
                       setFormData({ ...formData, cost: e.target.value })
                     }
-                    className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded text-white"
+                    className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-[#efefef] mb-2">
                     属性
                   </label>
                   <input
@@ -428,12 +544,12 @@ export default function SpecialSkillManager() {
                     onChange={(e) =>
                       setFormData({ ...formData, attribute: e.target.value })
                     }
-                    className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded text-white"
+                    className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-[#efefef] mb-2">
                     対象
                   </label>
                   <input
@@ -442,12 +558,12 @@ export default function SpecialSkillManager() {
                     onChange={(e) =>
                       setFormData({ ...formData, target: e.target.value })
                     }
-                    className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded text-white"
+                    className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-[#efefef] mb-2">
                     射程/形状
                   </label>
                   <input
@@ -456,12 +572,12 @@ export default function SpecialSkillManager() {
                     onChange={(e) =>
                       setFormData({ ...formData, rangeShape: e.target.value })
                     }
-                    className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded text-white"
+                    className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-[#efefef] mb-2">
                     ページ *
                   </label>
                   <input
@@ -470,13 +586,13 @@ export default function SpecialSkillManager() {
                     onChange={(e) =>
                       setFormData({ ...formData, page: e.target.value })
                     }
-                    className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded text-white"
+                    className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
                     required
                   />
                 </div>
 
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-[#efefef] mb-2">
                     概要 *
                   </label>
                   <textarea
@@ -484,28 +600,133 @@ export default function SpecialSkillManager() {
                     onChange={(e) =>
                       setFormData({ ...formData, summary: e.target.value })
                     }
-                    className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded text-white"
+                    className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
                     rows={3}
                     required
                   />
                 </div>
 
+                {/* カテゴリー別カスタムフィールド（動的生成） */}
+                {getSelectedCategoryFields().map((field) => {
+                  const value = formData.customFields[field.fieldKey]
+
+                  if (field.fieldType === 'BOOLEAN') {
+                    return (
+                      <div key={field.id}>
+                        <label className="block text-sm font-medium text-[#efefef] mb-2">
+                          {field.fieldLabel}
+                          {field.required && ' *'}
+                        </label>
+                        <select
+                          value={value === null || value === undefined ? '' : value ? 'true' : 'false'}
+                          onChange={(e) =>
+                            updateCustomField(
+                              field.fieldKey,
+                              e.target.value === '' ? null : e.target.value === 'true'
+                            )
+                          }
+                          className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
+                          required={field.required}
+                        >
+                          <option value="">-</option>
+                          <option value="true">有</option>
+                          <option value="false">無</option>
+                        </select>
+                      </div>
+                    )
+                  }
+
+                  if (field.fieldType === 'NUMBER') {
+                    return (
+                      <div key={field.id}>
+                        <label className="block text-sm font-medium text-[#efefef] mb-2">
+                          {field.fieldLabel}
+                          {field.required && ' *'}
+                        </label>
+                        <input
+                          type="number"
+                          value={value ?? ''}
+                          onChange={(e) =>
+                            updateCustomField(
+                              field.fieldKey,
+                              e.target.value ? parseInt(e.target.value) : null
+                            )
+                          }
+                          className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
+                          placeholder={field.placeholder || ''}
+                          required={field.required}
+                        />
+                      </div>
+                    )
+                  }
+
+                  if (field.fieldType === 'TEXTAREA') {
+                    return (
+                      <div key={field.id} className="col-span-2">
+                        <label className="block text-sm font-medium text-[#efefef] mb-2">
+                          {field.fieldLabel}
+                          {field.required && ' *'}
+                        </label>
+                        <textarea
+                          value={value || ''}
+                          onChange={(e) =>
+                            updateCustomField(field.fieldKey, e.target.value)
+                          }
+                          className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
+                          placeholder={field.placeholder || ''}
+                          rows={3}
+                          required={field.required}
+                        />
+                      </div>
+                    )
+                  }
+
+                  // TEXT または SELECT
+                  return (
+                    <div key={field.id}>
+                      <label className="block text-sm font-medium text-[#efefef] mb-2">
+                        {field.fieldLabel}
+                        {field.required && ' *'}
+                      </label>
+                      <input
+                        type="text"
+                        value={value || ''}
+                        onChange={(e) =>
+                          updateCustomField(field.fieldKey, e.target.value)
+                        }
+                        className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
+                        placeholder={field.placeholder || ''}
+                        required={field.required}
+                      />
+                    </div>
+                  )
+                })}
+
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-[#efefef] mb-2">
                     レギュレーション *
                   </label>
-                  <input
-                    type="text"
-                    value={formData.regulation}
+                  <select
+                    value={formData.regulation || (regulations.length > 0 ? regulations[0].code : '')}
                     onChange={(e) =>
                       setFormData({
                         ...formData,
                         regulation: e.target.value,
                       })
                     }
-                    className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded text-white"
+                    className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
                     required
-                  />
+                  >
+                    {regulations.length === 0 ? (
+                      <option value="">読み込み中...</option>
+                    ) : (
+                      regulations.map((reg) => (
+                        <option key={reg.code} value={reg.code}>
+                          {reg.code} - {reg.name}
+                        </option>
+                      ))
+                    )}
+                  </select>
                 </div>
               </div>
 
@@ -513,14 +734,14 @@ export default function SpecialSkillManager() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+                  className="px-4 py-2 bg-[#303027] hover:bg-[#6d6d6d] text-[#efefef] border border-[#6d6d6d] rounded-lg transition-colors"
                   disabled={isSaving}
                 >
                   キャンセル
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+                  className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] text-[#efefef] hover:text-[#303027] rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
                   disabled={isSaving}
                 >
                   {isSaving && (
