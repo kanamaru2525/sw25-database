@@ -48,7 +48,7 @@ export async function DELETE(
 
     // カテゴリーに紐づくデータがあるかチェック
     const skillCount = await prisma.specialSkill.count({
-      where: { categoryId },
+      where: { categoryCode: categoryId as any },
     })
 
     if (skillCount > 0) {

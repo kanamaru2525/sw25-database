@@ -194,11 +194,13 @@ export function ItemSearch() {
     let text = `${item.name}\n`
     
     if (item.itemType === 'weapon') {
+      const w = item as any
       text += `武器 / ${item.category} / ランク${item.rank} / ${regulationDisplay}\n`
-      text += `用法:${formatUsage(item.usage)} / 必筋:${item.minStrength} / 命中:${item.hit > 0 ? '+' : ''}${item.hit} / 威力:${item.power} / C値:${item.critical} / 追加D:${item.extraDamage}${item.range ? ` / 射程:${item.range}m` : ''} / 価格:${item.price}G`
+      text += `用法:${formatUsage(item.usage)} / 必筋:${w.minStrength} / 命中:${w.hit > 0 ? '+' : ''}${w.hit} / 威力:${w.power} / C値:${w.critical} / 追加D:${w.extraDamage}${w.range ? ` / 射程:${w.range}m` : ''} / 価格:${item.price}G`
     } else if (item.itemType === 'armor') {
+      const a = item as any
       text += `防具 / ${item.category} / ランク${item.rank} / ${regulationDisplay}\n`
-      text += `用法:${formatUsage(item.usage)} / 必筋:${item.minStrength} / 回避:${item.evasion > 0 ? '+' : ''}${item.evasion} / 防護:${item.defense} / 価格:${item.price}G`
+      text += `用法:${formatUsage(item.usage)} / 必筋:${a.minStrength} / 回避:${a.evasion > 0 ? '+' : ''}${a.evasion} / 防護:${a.defense} / 価格:${item.price}G`
     } else {
       text += `装備品 / ${regulationDisplay}\n`
       text += `用法:${formatUsage(item.usage)} / 価格:${item.price}G`
@@ -515,29 +517,29 @@ export function ItemSearch() {
                   <span className="text-[#6d6d6d]">/</span>
                   <span>
                     <span className="text-[#6d6d6d]">必筋:</span>
-                    <span className="ml-1 text-[#efefef]">{item.minStrength}</span>
+                    <span className="ml-1 text-[#efefef]">{(item as any).minStrength ?? '-'}</span>
                   </span>
                   {item.itemType === 'weapon' ? (
                     <>
                       <span className="text-[#6d6d6d]">/</span>
                       <span>
                         <span className="text-[#6d6d6d]">命中:</span>
-                        <span className="ml-1 text-[#efefef]">{item.hit > 0 ? '+' : ''}{item.hit}</span>
+                        <span className="ml-1 text-[#efefef]">{(item as any).hit > 0 ? '+' : ''}{(item as any).hit}</span>
                       </span>
                       <span className="text-[#6d6d6d]">/</span>
                       <span>
                         <span className="text-[#6d6d6d]">威力:</span>
-                        <span className="ml-1 text-[#efefef]">{item.power}</span>
+                        <span className="ml-1 text-[#efefef]">{(item as any).power}</span>
                       </span>
                       <span className="text-[#6d6d6d]">/</span>
                       <span>
                         <span className="text-[#6d6d6d]">C値:</span>
-                        <span className="ml-1 text-[#efefef]">{item.critical}</span>
+                        <span className="ml-1 text-[#efefef]">{(item as any).critical}</span>
                       </span>
                       <span className="text-[#6d6d6d]">/</span>
                       <span>
                         <span className="text-[#6d6d6d]">追加D:</span>
-                        <span className="ml-1 text-[#efefef]">{item.extraDamage}</span>
+                        <span className="ml-1 text-[#efefef]">{(item as any).extraDamage}</span>
                       </span>
                       {item.range && (
                         <>
@@ -554,12 +556,12 @@ export function ItemSearch() {
                       <span className="text-[#6d6d6d]">/</span>
                       <span>
                         <span className="text-[#6d6d6d]">回避:</span>
-                        <span className="ml-1 text-[#efefef]">{item.evasion > 0 ? '+' : ''}{item.evasion}</span>
+                        <span className="ml-1 text-[#efefef]">{(item as any).evasion > 0 ? '+' : ''}{(item as any).evasion}</span>
                       </span>
                       <span className="text-[#6d6d6d]">/</span>
                       <span>
                         <span className="text-[#6d6d6d]">防護:</span>
-                        <span className="ml-1 text-[#efefef]">{item.defense}</span>
+                        <span className="ml-1 text-[#efefef]">{(item as any).defense}</span>
                       </span>
                     </>
                   )}

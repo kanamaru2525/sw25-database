@@ -286,7 +286,7 @@ export default function CategoryManager() {
           </div>
           <div className="flex gap-4">
             <button
-              onClick={openCategoryModal}
+              onClick={() => openCategoryModal()}
               className="px-6 py-3 bg-[#6d6d6d] hover:bg-[#efefef] text-[#efefef] hover:text-[#303027] rounded-lg transition-colors"
             >
               カテゴリー追加

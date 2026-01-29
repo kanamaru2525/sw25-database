@@ -1,0 +1,19 @@
+# Development files
+.env.local
+.env
+
+# SQL scripts and migration tools
+*.sql
+*.mjs
+check-*.ts
+migrate-*.ts
+update-*.ts
+add-*.ts
+fix-*.ts
+seed-*.ts
+test-*.mjs
+*_model.txt
+
+# Git
+.git
+.github

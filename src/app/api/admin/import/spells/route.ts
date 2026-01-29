@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
         const regulation = REGULATION_MAP[row.regulation] || row.regulation
 
         // Map magisphere (大/中/小 -> LARGE/MEDIUM/SMALL)
-        const MAGISPHERE_MAP: Record<string, string> = {
+        const MAGISPHERE_MAP: Record<string, 'LARGE' | 'MEDIUM' | 'SMALL'> = {
           '大': 'LARGE',
           '中': 'MEDIUM',
           '小': 'SMALL',

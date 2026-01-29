@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
       prisma.specialSkill.findMany({
         where,
         orderBy: [
-          { category: 'asc' },
+          { categoryCode: 'asc' },
           { level: 'asc' },
           { name: 'asc' },
         ],
