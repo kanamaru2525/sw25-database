@@ -10,9 +10,10 @@ const globalForPrisma = globalThis as unknown as {
 // Vercel Serverless環境用の接続プール設定
 const createPool = () => {
   try {
-    // 本番環境では必ずDIRECT_URLを使用（接続プーリングなし）
+    // Vercel Serverless環境では接続プーリングURL（DATABASE_URL）を使用
+    // ローカル環境ではDIRECT_URLを使用
     const connectionString = process.env.NODE_ENV === 'production'
-      ? process.env.DIRECT_URL
+      ? process.env.DATABASE_URL  // PgBouncer経由（推奨）
       : (process.env.DIRECT_URL || process.env.DATABASE_URL)
 
     if (!connectionString) {
@@ -23,6 +24,7 @@ const createPool = () => {
 
     console.log('[Prisma] Creating connection pool...', {
       env: process.env.NODE_ENV,
+      usingPgBouncer: process.env.NODE_ENV === 'production',
       hasDirectUrl: !!process.env.DIRECT_URL,
       hasDatabaseUrl: !!process.env.DATABASE_URL,
     })
@@ -30,11 +32,9 @@ const createPool = () => {
     const pool = new Pool({
       connectionString,
       max: 1, // Serverless環境では1接続のみ
-      idleTimeoutMillis: 30000,
+      idleTimeoutMillis: 0, // PgBouncer使用時は0に設定
       connectionTimeoutMillis: 10000,
-      ssl: {
-        rejectUnauthorized: false,
-      },
+      ssl: { rejectUnauthorized: false },
     })
 
     pool.on('error', (err) => {
