@@ -1,10 +1,5 @@
 {
-  "buildCommand": "prisma generate && next build",
+  "buildCommand": "NEXT_PRIVATE_DISABLE_TURBOPACK=1 prisma generate && NEXT_PRIVATE_DISABLE_TURBOPACK=1 next build",
   "framework": "nextjs",
-  "installCommand": "npm install",
-  "build": {
-    "env": {
-      "NEXT_PRIVATE_DISABLE_TURBOPACK": "1"
-    }
-  }
+  "installCommand": "npm install"
 }
