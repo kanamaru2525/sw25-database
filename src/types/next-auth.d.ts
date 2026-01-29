@@ -11,11 +11,13 @@ declare module "next-auth" {
 
   interface User {
     isAdmin?: boolean
+    discordId?: string
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT {
     isAdmin?: boolean
+    discordId?: string
   }
 }

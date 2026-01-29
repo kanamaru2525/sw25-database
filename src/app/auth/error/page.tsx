@@ -11,15 +11,87 @@ function ErrorContent() {
   const getErrorMessage = (error: string | null) => {
     switch (error) {
       case 'Configuration':
-        return '認証設定にエラーがあります。管理者にお問い合わせください。'
+        return {
+          title: '設定エラー',
+          message: '認証設定にエラーがあります。管理者にお問い合わせください。',
+          details: 'NEXTAUTH_URLまたはDiscordの設定が正しくありません。'
+        }
       case 'AccessDenied':
-        return 'アクセスが拒否されました。指定されたDiscordサーバーのメンバーではない可能性があります。'
+        return {
+          title: 'アクセス拒否',
+          message: '指定されたDiscordサーバーのメンバーではありません。',
+          details: 'このアプリケーションにアクセスするには、特定のDiscordサーバーに参加している必要があります。'
+        }
       case 'Verification':
-        return '認証トークンの検証に失敗しました。'
+        return {
+          title: '検証エラー',
+          message: '認証トークンの検証に失敗しました。',
+          details: 'セッションの有効期限が切れている可能性があります。もう一度ログインしてください。'
+        }
+      case 'OAuthSignin':
+        return {
+          title: 'OAuth開始エラー',
+          message: 'Discordとの連携開始に失敗しました。',
+          details: 'ネットワーク接続を確認するか、しばらく時間をおいて再度お試しください。'
+        }
+      case 'OAuthCallback':
+        return {
+          title: 'OAuth コールバックエラー',
+          message: 'Discord認証の完了に失敗しました。',
+          details: 'Discord側でキャンセルされたか、タイムアウトが発生しました。'
+        }
+      case 'OAuthCreateAccount':
+        return {
+          title: 'アカウント作成エラー',
+          message: 'データベースへのアカウント登録に失敗しました。',
+          details: 'データベース接続に問題がある可能性があります。管理者にお問い合わせください。'
+        }
+      case 'EmailCreateAccount':
+        return {
+          title: 'アカウント作成エラー',
+          message: 'アカウントの作成に失敗しました。',
+          details: 'もう一度お試しいただくか、管理者にお問い合わせください。'
+        }
+      case 'Callback':
+        return {
+          title: 'コールバックエラー',
+          message: '認証後の処理に失敗しました。',
+          details: 'セッションの作成に問題が発生しました。もう一度お試しください。'
+        }
+      case 'OAuthAccountNotLinked':
+        return {
+          title: 'アカウントリンクエラー',
+          message: 'このメールアドレスは既に別のアカウントに関連付けられています。',
+          details: '同じメールアドレスを持つ別の認証方法が存在します。'
+        }
+      case 'EmailSignin':
+        return {
+          title: 'メール送信エラー',
+          message: '認証メールの送信に失敗しました。',
+          details: 'メールアドレスを確認するか、しばらく時間をおいて再度お試しください。'
+        }
+      case 'CredentialsSignin':
+        return {
+          title: '認証情報エラー',
+          message: '認証情報が正しくありません。',
+          details: 'ユーザー名またはパスワードを確認してください。'
+        }
+      case 'SessionRequired':
+        return {
+          title: 'セッション必須',
+          message: 'このページにアクセスするにはログインが必要です。',
+          details: 'セッションの有効期限が切れた可能性があります。'
+        }
       default:
-        return '認証中にエラーが発生しました。もう一度お試しください。'
+        return {
+          title: '認証エラー',
+          message: '認証中に不明なエラーが発生しました。',
+          details: error ? `エラーコード: ${error}` : 'もう一度お試しください。'
+        }
     }
   }
+  
+  const errorInfo = getErrorMessage(error)
   
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-red-900/20 to-slate-900">
@@ -43,11 +115,15 @@ function ErrorContent() {
           </div>
           
           <h1 className="text-3xl font-bold text-white mb-2">
-            認証エラー
+            {errorInfo.title}
           </h1>
           
-          <p className="text-slate-300 mt-4">
-            {getErrorMessage(error)}
+          <p className="text-slate-300 mt-4 mb-2 font-medium">
+            {errorInfo.message}
+          </p>
+          
+          <p className="text-slate-400 text-sm">
+            {errorInfo.details}
           </p>
         </div>
         
