@@ -1,12 +1,12 @@
 const { Pool } = require('pg');
 
-// PgBouncer URL（Vercel本番環境で使用）
-const DATABASE_URL = "postgresql://postgres:wje5.q*g6UhTxiX@db.ddxkcjqxjnawecaohefm.supabase.co:6543/postgres?pgbouncer=true&connection_limit=1";
+// Session Pooler URL（IPv4互換、Vercel本番環境用）
+const DATABASE_URL = "postgresql://postgres.ddxkcjqxjnawecaohefm:wje5.q*g6UhTxiX@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true";
 
-// Direct URL（ローカル開発で使用）
-const DIRECT_URL = "postgresql://postgres:wje5.q*g6UhTxiX@db.ddxkcjqxjnawecaohefm.supabase.co:5432/postgres";
+// Session Pooler Direct URL（IPv4互換、ローカル開発用）
+const DIRECT_URL = "postgresql://postgres.ddxkcjqxjnawecaohefm:wje5.q*g6UhTxiX@aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres";
 
-console.log('=== Supabase接続テスト ===\n');
+console.log('=== Supabase Session Pooler接続テスト（IPv4互換） ===\n');
 
 // PgBouncer接続テスト
 console.log('1. PgBouncer URL テスト（本番環境用）...');
