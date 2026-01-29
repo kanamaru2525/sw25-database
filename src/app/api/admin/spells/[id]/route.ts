@@ -36,7 +36,7 @@ export async function PUT(
         summary: data.summary,
         magisphere: data.magisphere || null,
         page: data.page,
-        regulation: data.regulation,
+        regulation: data.regulation || 'TYPE_I',
       },
     })
 

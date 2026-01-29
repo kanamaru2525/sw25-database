@@ -38,7 +38,7 @@ export async function PUT(
         price: data.price,
         summary: data.summary,
         page: data.page,
-        regulation: data.regulation,
+        regulation: data.regulation || 'TYPE_I',
       },
     })
 

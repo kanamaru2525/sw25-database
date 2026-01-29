@@ -31,7 +31,7 @@ export async function PUT(
         risk: data.risk || null,
         summary: data.summary,
         page: data.page,
-        regulation: mapToEnumValue(data.regulation) as any,
+        regulation: mapToEnumValue(data.regulation || 'TYPE_I') as any,
         vagrancy: data.vagrancy || false,
       },
     })
