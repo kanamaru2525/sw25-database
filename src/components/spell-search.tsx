@@ -80,8 +80,8 @@ const REGULATION_LABELS: Record<RegulationType, string> = {
 }
 
 // 妖精魔法の属性（魔法のattributeとは異なる妖精魔法専用のカテゴリー）
-type FairyAttribute = '土' | '水氷' | '火' | '風' | '光' | '闇'
-const FAIRY_ATTRIBUTES: FairyAttribute[] = ['土', '水氷', '火', '風', '光', '闇']
+type FairyAttribute = '土' | '水・氷' | '炎' | '風' | '光' | '闇'
+const FAIRY_ATTRIBUTES: FairyAttribute[] = ['土', '水・氷', '炎', '風', '光', '闇']
 
 // 神聖魔法の神
 const DEITIES = [
@@ -109,9 +109,8 @@ const calculateFairyRank = (level: number, contractCount: number, isSpecial: boo
     // 4属性契約
     return level
   } else if (contractCount === 3) {
-    // 3属性契約
-    const threeRanks = [2, 2, 4, 5, 6, 8, 9, 10, 12, 13, 14, 15, 15, 15, 15]
-    return threeRanks[level - 1] || 0
+    // 3属性契約: Lv.5なら1～6ランクの魔法を表示
+    return level + 1
   }
   return level // デフォルト
 }
