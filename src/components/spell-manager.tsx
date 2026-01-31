@@ -61,8 +61,8 @@ const REGULATION_LABELS: Record<RegulationType, string> = {
 }
 
 // 妖精魔法の属性（魔法のattributeとは異なる妖精魔法専用のカテゴリー）
-type FairyAttribute = '土' | '水氷' | '火' | '風' | '光' | '闇' | '基本' | '特殊'
-const FAIRY_ATTRIBUTES: FairyAttribute[] = ['土', '水氷', '火', '風', '光', '闇', '基本', '特殊']
+type FairyAttribute = '土' | '水・氷' | '炎' | '風' | '光' | '闇' | '基本' | '特殊'
+const FAIRY_ATTRIBUTES: FairyAttribute[] = ['土', '水・氷', '炎', '風', '光', '闇', '基本', '特殊']
 
 export function SpellManager() {
   const [spells, setSpells] = useState<Spell[]>([])
