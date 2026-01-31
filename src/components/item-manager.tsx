@@ -384,27 +384,31 @@ export function ItemManager() {
             </table>
           </div>
 
+          {/* ページネーション */}
+          {/* TODO: ページ数・API対応後に有効化。下記はUI例。 */}
+          {/*
           {totalPages > 1 && (
-            <div className="flex justify-center gap-2">
+            <div className="flex justify-center gap-2 mt-4">
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#303027] text-[#303027] hover:text-[#303027] disabled:text-[#6d6d6d] rounded transition-colors"
+                className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#303027] text-[#efefef] hover:text-[#303027] rounded"
               >
                 前へ
               </button>
-              <span className="px-4 py-2 text-[#efefef]">
+              <span className="px-4 py-2 text-[#6d6d6d]">
                 {page} / {totalPages}
               </span>
               <button
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#303027] text-[#303027] hover:text-[#303027] disabled:text-[#6d6d6d] rounded transition-colors"
+                className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#303027] text-[#efefef] hover:text-[#303027] rounded"
               >
                 次へ
               </button>
             </div>
           )}
+          */}
         </>
       )}
 

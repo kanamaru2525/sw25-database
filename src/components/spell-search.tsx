@@ -139,6 +139,7 @@ export function SpellSearch() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string>('')
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
   
   // 妖精魔法の属性選択
   const [selectedFairyAttributes, setSelectedFairyAttributes] = useState<FairyAttribute[]>([])
@@ -204,7 +205,6 @@ ${SPELL_TYPE_LABELS[spell.type as SpellType] || spell.type} Lv.${spell.level} ${
     
     try {
       const params = new URLSearchParams()
-      
       // 複数の魔法タイプとレベルの組み合わせをパラメータに追加
       spellTypeLevels.forEach((stl, index) => {
         if (stl.type !== 'ALL') {
@@ -214,39 +214,30 @@ ${SPELL_TYPE_LABELS[spell.type as SpellType] || spell.type} Lv.${spell.level} ${
           }
         }
       })
-      
       // 妖精魔法で属性が選択されている場合（最初の妖精魔法タイプ用）
       const firstYoseiType = spellTypeLevels.find(stl => stl.type === 'YOSEI')
       if (firstYoseiType && selectedFairyAttributes.length > 0) {
         selectedFairyAttributes.forEach(attr => {
           params.append('fairyAttributes[]', attr)
         })
-        
-        // 契約数に応じた最大ランクを計算
         const numLevel = parseInt(firstYoseiType.level) || 15
         const contractCount = selectedFairyAttributes.length
         const maxRank = calculateFairyRank(numLevel, contractCount, false)
-        
-        // 基本妖精魔法のランク（4属性以上契約時に表示）
         if (contractCount >= 4) {
           params.append('includeBasicFairy', 'true')
           params.append('maxFairyRank', maxRank.toString())
         }
-        
-        // 特殊妖精魔法のランク（全属性契約時のみ）
         if (contractCount === 6) {
           const specialMaxRank = calculateFairyRank(numLevel, 6, true)
           params.append('includeSpecialFairy', 'true')
           params.append('maxSpecialRank', specialMaxRank.toString())
         }
       }
-      
       // 神聖魔法で神が選択されている場合
       const firstShinseiType = spellTypeLevels.find(stl => stl.type === 'SHINSEI')
       if (firstShinseiType && selectedDeity) {
         params.append('deity', selectedDeity)
       }
-      
       // プリセットが選択されている場合、そのレギュレーションを使用
       if (selectedPresetId !== 'ALL') {
         const selectedPreset = presets.find(p => p.id === selectedPresetId)
@@ -256,15 +247,13 @@ ${SPELL_TYPE_LABELS[spell.type as SpellType] || spell.type} Lv.${spell.level} ${
           })
         }
       }
-      
       if (name) params.append('name', name)
-      
+      // ページ番号を追加
+      params.append('page', page.toString())
       const response = await fetch(`/api/spells?${params.toString()}`)
-      
       if (!response.ok) {
         throw new Error('検索に失敗しました')
       }
-      
       const data = await response.json()
       setResult(data)
     } catch (err) {
@@ -275,10 +264,13 @@ ${SPELL_TYPE_LABELS[spell.type as SpellType] || spell.type} Lv.${spell.level} ${
   }
 
   useEffect(() => {
-    if (presets.length >= 0) {
-      handleSearch()
-    }
+    setPage(1)
   }, [spellTypeLevels, selectedPresetId, selectedFairyAttributes, selectedDeity])
+
+  useEffect(() => {
+    handleSearch()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spellTypeLevels, selectedPresetId, selectedFairyAttributes, selectedDeity, page])
 
   return (
     <div className="space-y-6">
@@ -615,10 +607,26 @@ ${SPELL_TYPE_LABELS[spell.type as SpellType] || spell.type} Lv.${spell.level} ${
             ))}
           </div>
 
-          {/* ページネーション情報 */}
+          {/* ページネーション情報・ページ送り */}
           {result.pagination.totalPages > 1 && (
-            <div className="text-center text-slate-400">
-              ページ {result.pagination.page} / {result.pagination.totalPages}
+            <div className="flex justify-center gap-2 mt-6">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#303027] text-[#efefef] hover:text-[#303027] rounded"
+              >
+                前へ
+              </button>
+              <span className="px-4 py-2 text-[#6d6d6d]">
+                {page} / {result.pagination.totalPages}
+              </span>
+              <button
+                onClick={() => setPage(p => Math.min(result.pagination.totalPages, p + 1))}
+                disabled={page === result.pagination.totalPages}
+                className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#303027] text-[#efefef] hover:text-[#303027] rounded"
+              >
+                次へ
+              </button>
             </div>
           )}
         </div>

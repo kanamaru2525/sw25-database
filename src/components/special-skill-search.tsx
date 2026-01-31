@@ -388,10 +388,36 @@ ${categoryName} Lv.${skill.level ?? '-'} ${regulationName}${skill.duration ? ` /
             ))}
           </div>
 
-          {/* ページネーション情報 */}
+          {/* ページネーション情報・ページ送り */}
           {result.pagination.totalPages > 1 && (
-            <div className="text-center text-slate-400">
-              ページ {result.pagination.page} / {result.pagination.totalPages}
+            <div className="flex flex-col items-center gap-2 mt-6">
+              <div className="text-slate-400">
+                ページ {result.pagination.page} / {result.pagination.totalPages}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    if (result.pagination.page > 1) {
+                      setResult(r => r && { ...r, pagination: { ...r.pagination, page: r.pagination.page - 1 } })
+                    }
+                  }}
+                  disabled={result.pagination.page === 1}
+                  className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#303027] text-[#efefef] hover:text-[#303027] rounded"
+                >
+                  前へ
+                </button>
+                <button
+                  onClick={() => {
+                    if (result.pagination.page < result.pagination.totalPages) {
+                      setResult(r => r && { ...r, pagination: { ...r.pagination, page: r.pagination.page + 1 } })
+                    }
+                  }}
+                  disabled={result.pagination.page === result.pagination.totalPages}
+                  className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#303027] text-[#efefef] hover:text-[#303027] rounded"
+                >
+                  次へ
+                </button>
+              </div>
             </div>
           )}
         </div>
