@@ -22,7 +22,7 @@ interface Spell {
   biblioRank: number | null
   target: string
   summary: string
-  magisphere: string | null // LARGE, MEDIUM, SMALL
+  magisphere: string | null
   page: string
   regulation: string
 }
@@ -79,52 +79,17 @@ const REGULATION_LABELS: Record<RegulationType, string> = {
   TS: 'TS',
 }
 
-// 妖精魔法の属性（魔法のattributeとは異なる妖精魔法専用のカテゴリー）
+// 妖精魔法のランク表ロジック
+const FAIRY_RANK_DATA = {
+  FOUR_ELEMENTS: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+  THREE_ELEMENTS: [2, 2, 4, 5, 6, 8, 9, 10, 12, 13, 14, 15, 15, 15, 15],
+  ALL_ELEMENTS: [0, 0, 2, 3, 4, 4, 5, 6, 6, 7, 8, 8, 9, 10, 10],
+  SPECIAL: [0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5]
+};
+
 type FairyAttribute = '土' | '水・氷' | '炎' | '風' | '光' | '闇'
 const FAIRY_ATTRIBUTES: FairyAttribute[] = ['土', '水・氷', '炎', '風', '光', '闇']
 
-// 神聖魔法の神
-const DEITIES = [
-  'ティダン',
-  'ル=ロウド',
-  'グレンダール',
-  'カルディア',
-  'イーヴ',
-  'ダルクレム'
-]
-
-// 契約数による魔法ランク計算
-const calculateFairyRank = (level: number, contractCount: number, isSpecial: boolean): number => {
-  if (isSpecial) {
-    // 特殊妖精魔法は全属性契約時のみ
-    const specialRanks = [0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5]
-    return specialRanks[level - 1] || 0
-  }
-  
-  if (contractCount === 6) {
-    // 全属性契約
-    const allRanks = [0, 0, 2, 3, 4, 4, 5, 6, 6, 7, 8, 8, 9, 10, 10]
-    return allRanks[level - 1] || 0
-  } else if (contractCount === 4) {
-    // 4属性契約
-    return level
-  } else if (contractCount === 3) {
-    // 3属性契約: Lv.5なら1～6ランクの魔法を表示
-    return level + 1
-  }
-  return level // デフォルト
-}
-
-// 秘奥魔法のレベルからランクを計算
-const calculateHiouRank = (level: number): number => {
-  if (level >= 13) return 5
-  if (level >= 10) return 4
-  if (level >= 7) return 3
-  if (level >= 4) return 2
-  return 1
-}
-
-// 魔法タイプとレベルの組み合わせ
 interface SpellTypeLevel {
   type: SpellType
   level: string
@@ -141,16 +106,10 @@ export function SpellSearch() {
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   
-  // 妖精魔法の属性選択
   const [selectedFairyAttributes, setSelectedFairyAttributes] = useState<FairyAttribute[]>([])
-  
-  // 神聖魔法の神選択
   const [selectedDeity, setSelectedDeity] = useState<string>('')
-  
-  // 神のリスト
   const [deities, setDeities] = useState<string[]>([])
 
-  // プリセットを取得
   useEffect(() => {
     const fetchPresets = async () => {
       try {
@@ -158,18 +117,14 @@ export function SpellSearch() {
         if (response.ok) {
           const data = await response.json()
           setPresets(Array.isArray(data.presets) ? data.presets : [])
-        } else {
-          setPresets([])
         }
       } catch (err) {
         console.error('Failed to fetch presets:', err)
-        setPresets([])
       }
     }
     fetchPresets()
   }, [])
   
-  // 神を取得
   useEffect(() => {
     const fetchDeities = async () => {
       try {
@@ -184,6 +139,15 @@ export function SpellSearch() {
     }
     fetchDeities()
   }, [])
+
+  const getFairyMaxRank = (skillLevel: number, attributeCount: number, isSpecial: boolean = false) => {
+    const idx = Math.max(0, Math.min(14, skillLevel - 1));
+    if (isSpecial) return FAIRY_RANK_DATA.SPECIAL[idx];
+    if (attributeCount === 6) return FAIRY_RANK_DATA.ALL_ELEMENTS[idx];
+    if (attributeCount === 3) return FAIRY_RANK_DATA.THREE_ELEMENTS[idx];
+    // 4属性契約をデフォルト（1,2,4,5属性選択時）とする
+    return FAIRY_RANK_DATA.FOUR_ELEMENTS[idx];
+  };
 
   const handleCopy = async (spell: Spell) => {
     const text = `${spell.name}
@@ -202,58 +166,53 @@ ${SPELL_TYPE_LABELS[spell.type as SpellType] || spell.type} Lv.${spell.level} ${
   const handleSearch = async () => {
     setLoading(true)
     setError('')
-    
     try {
       const params = new URLSearchParams()
-      // 複数の魔法タイプとレベルの組み合わせをパラメータに追加
+      
       spellTypeLevels.forEach((stl, index) => {
-        if (stl.type !== 'ALL') {
-          params.append(`spellTypes[${index}][type]`, stl.type)
-          if (stl.level) {
-            params.append(`spellTypes[${index}][level]`, stl.level)
+        if (stl.type === 'ALL') return;
+        params.append(`spellTypes[${index}][type]`, stl.type)
+        
+        if (stl.type === 'HIOU' && stl.level) {
+          const lv = parseInt(stl.level)
+          params.append(`spellTypes[${index}][biblioRankMin]`, '1')
+          params.append(`spellTypes[${index}][biblioRankMax]`, Math.min(5, Math.ceil(lv / 3)).toString())
+        } 
+        else if (stl.type === 'YOSEI' && stl.level) {
+          const lv = parseInt(stl.level)
+          const attrCount = selectedFairyAttributes.length
+          const maxRank = getFairyMaxRank(lv, attrCount)
+          
+          // 属性魔法の検索条件ランク
+          params.append(`spellTypes[${index}][level]`, maxRank.toString())
+          // 基本魔法を常に表示するためのパラメータ
+          params.append('includeBasicFairy', 'true')
+          params.append('basicFairyMaxLevel', lv.toString())
+          
+          if (attrCount === 6) {
+            const specialRank = getFairyMaxRank(lv, 6, true)
+            params.append('includeSpecialFairy', 'true')
+            params.append('maxSpecialRank', specialRank.toString())
           }
         }
+        else if (stl.level) {
+          params.append(`spellTypes[${index}][level]`, stl.level)
+        }
       })
-      // 妖精魔法で属性が選択されている場合（最初の妖精魔法タイプ用）
-      const firstYoseiType = spellTypeLevels.find(stl => stl.type === 'YOSEI')
-      if (firstYoseiType && selectedFairyAttributes.length > 0) {
-        selectedFairyAttributes.forEach(attr => {
-          params.append('fairyAttributes[]', attr)
-        })
-        const numLevel = parseInt(firstYoseiType.level) || 15
-        const contractCount = selectedFairyAttributes.length
-        const maxRank = calculateFairyRank(numLevel, contractCount, false)
-        if (contractCount >= 4) {
-          params.append('includeBasicFairy', 'true')
-          params.append('maxFairyRank', maxRank.toString())
-        }
-        if (contractCount === 6) {
-          const specialMaxRank = calculateFairyRank(numLevel, 6, true)
-          params.append('includeSpecialFairy', 'true')
-          params.append('maxSpecialRank', specialMaxRank.toString())
-        }
+
+      if (selectedFairyAttributes.length > 0) {
+        selectedFairyAttributes.forEach(attr => params.append('fairyAttributes[]', attr))
       }
-      // 神聖魔法で神が選択されている場合
-      const firstShinseiType = spellTypeLevels.find(stl => stl.type === 'SHINSEI')
-      if (firstShinseiType && selectedDeity) {
-        params.append('deity', selectedDeity)
-      }
-      // プリセットが選択されている場合、そのレギュレーションを使用
+      if (selectedDeity) params.append('deity', selectedDeity)
       if (selectedPresetId !== 'ALL') {
-        const selectedPreset = presets.find(p => p.id === selectedPresetId)
-        if (selectedPreset && selectedPreset.regulations.length > 0) {
-          selectedPreset.regulations.forEach(reg => {
-            params.append('regulations[]', reg)
-          })
-        }
+        const preset = presets.find(p => p.id === selectedPresetId)
+        preset?.regulations.forEach(reg => params.append('regulations[]', reg))
       }
       if (name) params.append('name', name)
-      // ページ番号を追加
       params.append('page', page.toString())
+
       const response = await fetch(`/api/spells?${params.toString()}`)
-      if (!response.ok) {
-        throw new Error('検索に失敗しました')
-      }
+      if (!response.ok) throw new Error('検索に失敗しました')
       const data = await response.json()
       setResult(data)
     } catch (err) {
@@ -269,12 +228,11 @@ ${SPELL_TYPE_LABELS[spell.type as SpellType] || spell.type} Lv.${spell.level} ${
 
   useEffect(() => {
     handleSearch()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spellTypeLevels, selectedPresetId, selectedFairyAttributes, selectedDeity, page])
 
   return (
     <div className="space-y-6">
-      {/* 検索フィルタ */}
+      {/* 検索条件セクション */}
       <div className="bg-[#303027]/50 backdrop-blur-sm rounded-xl p-6 border border-[#6d6d6d]">
         <div className="space-y-4 mb-4">
           <div className="flex items-center justify-between">
@@ -291,7 +249,6 @@ ${SPELL_TYPE_LABELS[spell.type as SpellType] || spell.type} Lv.${spell.level} ${
           
           {spellTypeLevels.map((stl, index) => (
             <div key={index} className="flex gap-2">
-              {/* 魔法種別 */}
               <select
                 value={stl.type}
                 onChange={(e) => {
@@ -299,16 +256,13 @@ ${SPELL_TYPE_LABELS[spell.type as SpellType] || spell.type} Lv.${spell.level} ${
                   newList[index].type = e.target.value as SpellType
                   setSpellTypeLevels(newList)
                 }}
-                className="flex-1 px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d]"
+                className="flex-1 px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] focus:outline-none"
               >
                 {Object.entries(SPELL_TYPE_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
+                  <option key={value} value={value}>{label}</option>
                 ))}
               </select>
 
-              {/* レベル */}
               <select
                 value={stl.level}
                 onChange={(e) => {
@@ -316,22 +270,17 @@ ${SPELL_TYPE_LABELS[spell.type as SpellType] || spell.type} Lv.${spell.level} ${
                   newList[index].level = e.target.value
                   setSpellTypeLevels(newList)
                 }}
-                className="w-32 px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d]"
+                className="w-32 px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef]"
               >
                 <option value="">すべて</option>
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map((lv) => (
-                  <option key={lv} value={lv}>
-                    Lv.{lv}
-                  </option>
+                  <option key={lv} value={lv}>Lv.{lv}</option>
                 ))}
               </select>
               
               {spellTypeLevels.length > 1 && (
                 <button
-                  onClick={() => {
-                    const newList = spellTypeLevels.filter((_, i) => i !== index)
-                    setSpellTypeLevels(newList)
-                  }}
+                  onClick={() => setSpellTypeLevels(spellTypeLevels.filter((_, i) => i !== index))}
                   className="px-3 py-2 bg-[#a44949] hover:bg-[#b85656] text-white rounded-lg transition-colors"
                 >
                   削除
@@ -342,43 +291,33 @@ ${SPELL_TYPE_LABELS[spell.type as SpellType] || spell.type} Lv.${spell.level} ${
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-
-          {/* レギュレーション */}
           <div>
-            <label className="block text-sm font-medium text-[#efefef] mb-2">
-              レギュレーション
-            </label>
+            <label className="block text-sm font-medium text-[#efefef] mb-2">レギュレーション</label>
             <select
               value={selectedPresetId}
               onChange={(e) => setSelectedPresetId(e.target.value)}
-              className="w-full px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d]"
+              className="w-full px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef]"
             >
               <option value="ALL">すべて</option>
-              {Array.isArray(presets) && presets.map((preset) => (
-                <option key={preset.id} value={preset.id}>
-                  {preset.name}
-                </option>
+              {presets.map((preset) => (
+                <option key={preset.id} value={preset.id}>{preset.name}</option>
               ))}
             </select>
           </div>
 
-          {/* 名前検索 */}
           <div>
-            <label className="block text-sm font-medium text-[#efefef] mb-2">
-              魔法名
-            </label>
+            <label className="block text-sm font-medium text-[#efefef] mb-2">魔法名</label>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="魔法名で検索"
-                className="flex-1 px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] placeholder-[#6d6d6d] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d]"
+                className="flex-1 px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] placeholder-[#6d6d6d]"
               />
               <button
                 onClick={handleSearch}
-                disabled={loading}
-                className="px-6 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#303027] text-[#efefef] hover:text-[#303027] disabled:text-[#6d6d6d] rounded-lg transition-colors"
+                className="px-6 py-2 bg-[#6d6d6d] hover:bg-[#efefef] text-[#efefef] hover:text-[#303027] rounded-lg transition-colors"
               >
                 検索
               </button>
@@ -396,13 +335,9 @@ ${SPELL_TYPE_LABELS[spell.type as SpellType] || spell.type} Lv.${spell.level} ${
               {FAIRY_ATTRIBUTES.map((attr) => (
                 <button
                   key={attr}
-                  onClick={() => {
-                    setSelectedFairyAttributes(prev => 
-                      prev.includes(attr) 
-                        ? prev.filter(a => a !== attr)
-                        : [...prev, attr]
-                    )
-                  }}
+                  onClick={() => setSelectedFairyAttributes(prev => 
+                    prev.includes(attr) ? prev.filter(a => a !== attr) : [...prev, attr]
+                  )}
                   className={`px-4 py-2 rounded-lg transition-colors ${
                     selectedFairyAttributes.includes(attr)
                       ? 'bg-[#6d6d6d] text-[#efefef] border-2 border-[#efefef]'
@@ -413,14 +348,17 @@ ${SPELL_TYPE_LABELS[spell.type as SpellType] || spell.type} Lv.${spell.level} ${
                 </button>
               ))}
             </div>
-            {selectedFairyAttributes.length > 0 && (() => {
+            {(() => {
               const yoseiLevel = spellTypeLevels.find(stl => stl.type === 'YOSEI')?.level
+              if (!yoseiLevel) return null;
+              const lv = parseInt(yoseiLevel);
+              const count = selectedFairyAttributes.length;
               return (
                 <div className="mt-3 text-sm text-[#6d6d6d]">
-                  契約数: {selectedFairyAttributes.length}属性
-                  {yoseiLevel && ` | 表示ランク: 1～${calculateFairyRank(parseInt(yoseiLevel), selectedFairyAttributes.length, false)}`}
-                  {selectedFairyAttributes.length === 6 && yoseiLevel && 
-                    ` | 特殊: 1～${calculateFairyRank(parseInt(yoseiLevel), 6, true)}`}
+                  技能Lv: {lv} | 契約属性: {count}個
+                  <br />
+                  基本魔法: 1～{lv} | 属性魔法: 1～{getFairyMaxRank(lv, count)}
+                  {count === 6 && ` | 特殊魔法: 1～${getFairyMaxRank(lv, 6, true)}`}
                 </div>
               )
             })()}
@@ -430,47 +368,21 @@ ${SPELL_TYPE_LABELS[spell.type as SpellType] || spell.type} Lv.${spell.level} ${
         {/* 神聖魔法の神選択 */}
         {spellTypeLevels.some(stl => stl.type === 'SHINSEI') && (
           <div className="mt-4 pt-4 border-t border-[#6d6d6d]">
-            <label className="block text-sm font-medium text-[#efefef] mb-2">
-              信仰する神を選択（神聖魔法専用）
-            </label>
+            <label className="block text-sm font-medium text-[#efefef] mb-2">信仰する神を選択</label>
             <select
               value={selectedDeity}
               onChange={(e) => setSelectedDeity(e.target.value)}
-              className="w-full md:w-64 px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d]"
+              className="w-full md:w-64 px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef]"
             >
               <option value="">すべて</option>
               {deities.map((deity) => (
-                <option key={deity} value={deity}>
-                  {deity}
-                </option>
+                <option key={deity} value={deity}>{deity}</option>
               ))}
             </select>
           </div>
         )}
-
-        {/* 秘奥魔法のランク表示 */}
-        {spellTypeLevels.some(stl => stl.type === 'HIOU' && stl.level) && (() => {
-          const hiouLevel = spellTypeLevels.find(stl => stl.type === 'HIOU')?.level
-          if (!hiouLevel) return null
-          const maxRank = calculateHiouRank(parseInt(hiouLevel))
-          return (
-            <div className="mt-4 pt-4 border-t border-[#6d6d6d]">
-              <div className="text-sm text-[#6d6d6d]">
-                秘奥魔法 レベル{hiouLevel}以下 | 表示ランク: 1～{maxRank}
-              </div>
-            </div>
-          )
-        })()}
       </div>
 
-      {/* エラー表示 */}
-      {error && (
-        <div className="bg-[#303027]/20 border border-[#6d6d6d] rounded-lg p-4 text-[#efefef]">
-          {error}
-        </div>
-      )}
-
-      {/* 検索結果 */}
       {loading ? (
         <div className="text-center py-12 text-[#6d6d6d]">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#6d6d6d] mx-auto"></div>
@@ -478,12 +390,10 @@ ${SPELL_TYPE_LABELS[spell.type as SpellType] || spell.type} Lv.${spell.level} ${
         </div>
       ) : result ? (
         <div className="space-y-4">
-          {/* 検索結果サマリー */}
           <div className="text-[#6d6d6d]">
             {result.pagination.total}件の魔法が見つかりました
           </div>
 
-          {/* 魔法リスト */}
           <div className="space-y-3">
             {result.spells.map((spell) => (
               <div
@@ -492,138 +402,70 @@ ${SPELL_TYPE_LABELS[spell.type as SpellType] || spell.type} Lv.${spell.level} ${
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
-                    <h3 className="text-xl font-bold text-white mb-1">
-                      {spell.name}
-                    </h3>
-                    <div className="flex gap-3 text-sm text-slate-400">
+                    <h3 className="text-xl font-bold text-white mb-1">{spell.name}</h3>
+                    <div className="flex flex-wrap gap-2 text-sm">
                       <span className="inline-flex items-center px-2 py-1 bg-purple-500/20 text-purple-300 rounded">
                         {SPELL_TYPE_LABELS[spell.type as SpellType] || spell.type}
                       </span>
-                      <span>Lv.{spell.level}</span>
-                      <span>{REGULATION_LABELS[spell.regulation as RegulationType] || spell.regulation}</span>
+                      <span className="text-slate-400">Lv.{spell.level}</span>
+                      <span className="text-slate-400">{REGULATION_LABELS[spell.regulation as RegulationType] || spell.regulation}</span>
                       <span className="text-slate-500">{spell.page}</span>
                       {spell.magisphere && (
-                        <span className="inline-flex items-center px-2 py-1 bg-blue-500/20 text-blue-300 rounded">
-                          魔法圏
-                        </span>
+                        <span className="inline-flex items-center px-2 py-1 bg-blue-500/20 text-blue-300 rounded">魔法圏</span>
                       )}
                     </div>
                   </div>
                   <button
                     onClick={() => handleCopy(spell)}
                     className="ml-4 px-3 py-2 bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 hover:text-white rounded transition-colors text-sm flex items-center gap-2"
-                    title="情報をコピー"
                   >
                     {copiedId === spell.id ? (
-                      <>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        コピー完了
-                      </>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                     ) : (
-                      <>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                        </svg>
-                        コピー
-                      </>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
                     )}
+                    {copiedId === spell.id ? '完了' : 'コピー'}
                   </button>
                 </div>
 
                 <div className="text-sm text-slate-300 mb-3 flex flex-wrap gap-x-3 gap-y-1">
-                  <span>
-                    <span className="text-slate-400">射程:</span>
-                    <span className="ml-1 text-white">{spell.range}</span>
-                  </span>
+                  <span><span className="text-slate-400">消費:</span> <span className="text-white">{spell.cost}</span></span>
                   <span className="text-slate-600">/</span>
-                  <span>
-                    <span className="text-slate-400">形状:</span>
-                    <span className="ml-1 text-white">{spell.shape}</span>
-                  </span>
+                  <span><span className="text-slate-400">射程:</span> <span className="text-white">{spell.range}</span></span>
                   <span className="text-slate-600">/</span>
-                  <span>
-                    <span className="text-slate-400">持続時間:</span>
-                    <span className="ml-1 text-white">{spell.duration}</span>
-                  </span>
+                  <span><span className="text-slate-400">形状:</span> <span className="text-white">{spell.shape}</span></span>
                   <span className="text-slate-600">/</span>
-                  <span>
-                    <span className="text-slate-400">消費:</span>
-                    <span className="ml-1 text-white">{spell.cost}</span>
-                  </span>
+                  <span><span className="text-slate-400">対象:</span> <span className="text-white">{spell.target}</span></span>
                   <span className="text-slate-600">/</span>
-                  <span>
-                    <span className="text-slate-400">対象:</span>
-                    <span className="ml-1 text-white">{spell.target}</span>
-                  </span>
+                  <span><span className="text-slate-400">持続:</span> <span className="text-white">{spell.duration}</span></span>
                   <span className="text-slate-600">/</span>
-                  <span>
-                    <span className="text-slate-400">抵抗:</span>
-                    <span className="ml-1 text-white">{spell.resistance}</span>
-                  </span>
+                  <span><span className="text-slate-400">抵抗:</span> <span className="text-white">{spell.resistance}</span></span>
                   {spell.attribute && (
-                    <>
-                      <span className="text-slate-600">/</span>
-                      <span>
-                        <span className="text-slate-400">属性:</span>
-                        <span className="ml-1 text-white">{spell.attribute}</span>
-                      </span>
-                    </>
-                  )}
-                  {spell.fairyAttributes.length > 0 && (
-                    <>
-                      <span className="text-slate-600">/</span>
-                      <span>
-                        <span className="text-slate-400">妖精属性:</span>
-                        <span className="ml-1 text-white">{spell.fairyAttributes.join(', ')}</span>
-                      </span>
-                    </>
-                  )}
-                  {spell.deity && (
-                    <>
-                      <span className="text-slate-600">/</span>
-                      <span>
-                        <span className="text-slate-400">神:</span>
-                        <span className="ml-1 text-white">{spell.deity}</span>
-                      </span>
-                    </>
-                  )}
-                  {spell.biblioRank !== null && (
-                    <>
-                      <span className="text-slate-600">/</span>
-                      <span>
-                        <span className="text-slate-400">文献ランク:</span>
-                        <span className="ml-1 text-white">{spell.biblioRank}</span>
-                      </span>
-                    </>
+                    <><span className="text-slate-600">/</span><span><span className="text-slate-400">属性:</span> <span className="text-white">{spell.attribute}</span></span></>
                   )}
                 </div>
 
-                <div className="text-sm text-slate-300 mt-4 pt-4 border-t border-slate-700 leading-relaxed">
+                <div className="text-sm text-slate-300 mt-4 pt-4 border-t border-slate-700 whitespace-pre-wrap leading-relaxed">
                   {spell.summary}
                 </div>
               </div>
             ))}
           </div>
 
-          {/* ページネーション情報・ページ送り */}
           {result.pagination.totalPages > 1 && (
             <div className="flex justify-center gap-2 mt-6">
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#303027] text-[#efefef] hover:text-[#303027] rounded"
+                className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#303027] text-[#efefef] hover:text-[#303027] rounded transition-colors"
               >
                 前へ
               </button>
-              <span className="px-4 py-2 text-[#6d6d6d]">
-                {page} / {result.pagination.totalPages}
-              </span>
+              <span className="px-4 py-2 text-[#6d6d6d]">{page} / {result.pagination.totalPages}</span>
               <button
                 onClick={() => setPage(p => Math.min(result.pagination.totalPages, p + 1))}
                 disabled={page === result.pagination.totalPages}
-                className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#303027] text-[#efefef] hover:text-[#303027] rounded"
+                className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#303027] text-[#efefef] hover:text-[#303027] rounded transition-colors"
               >
                 次へ
               </button>

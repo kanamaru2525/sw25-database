@@ -86,6 +86,7 @@ export function SpecialSkillSearch() {
   const [error, setError] = useState<string>('')
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [regulations, setRegulations] = useState<Array<{ code: string; name: string }>>([])
+  const [page, setPage] = useState(1)
 
   // プリセットを取得
   useEffect(() => {
@@ -155,8 +156,7 @@ ${categoryName} Lv.${skill.level ?? '-'} ${regulationName}${skill.duration ? ` /
       }
       
       if (name) params.append('name', name)
-      
-      const response = await fetch(`/api/abilities?${params.toString()}`)
+            params.append('page', page.toString())      const response = await fetch(`/api/abilities?${params.toString()}`)
       
       if (!response.ok) {
         throw new Error('検索に失敗しました')
@@ -172,10 +172,15 @@ ${categoryName} Lv.${skill.level ?? '-'} ${regulationName}${skill.duration ? ` /
   }
 
   useEffect(() => {
+    setPage(1)
+  }, [category, level, selectedPresetId])
+
+  useEffect(() => {
     if (presets.length >= 0) {
       handleSearch()
     }
-  }, [category, level, selectedPresetId])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [category, level, selectedPresetId, page])
 
   return (
     <div className="space-y-6">
@@ -388,36 +393,26 @@ ${categoryName} Lv.${skill.level ?? '-'} ${regulationName}${skill.duration ? ` /
             ))}
           </div>
 
-          {/* ページネーション情報・ページ送り */}
+          {/* ページネーション */}
           {result.pagination.totalPages > 1 && (
-            <div className="flex flex-col items-center gap-2 mt-6">
-              <div className="text-slate-400">
-                ページ {result.pagination.page} / {result.pagination.totalPages}
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    if (result.pagination.page > 1) {
-                      setResult(r => r && { ...r, pagination: { ...r.pagination, page: r.pagination.page - 1 } })
-                    }
-                  }}
-                  disabled={result.pagination.page === 1}
-                  className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#303027] text-[#efefef] hover:text-[#303027] rounded"
-                >
-                  前へ
-                </button>
-                <button
-                  onClick={() => {
-                    if (result.pagination.page < result.pagination.totalPages) {
-                      setResult(r => r && { ...r, pagination: { ...r.pagination, page: r.pagination.page + 1 } })
-                    }
-                  }}
-                  disabled={result.pagination.page === result.pagination.totalPages}
-                  className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#303027] text-[#efefef] hover:text-[#303027] rounded"
-                >
-                  次へ
-                </button>
-              </div>
+            <div className="flex justify-center gap-2 mt-6">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#303027] text-[#efefef] hover:text-[#303027] rounded"
+              >
+                前へ
+              </button>
+              <span className="px-4 py-2 text-[#6d6d6d]">
+                {page} / {result.pagination.totalPages}
+              </span>
+              <button
+                onClick={() => setPage(p => Math.min(result.pagination.totalPages, p + 1))}
+                disabled={page === result.pagination.totalPages}
+                className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#303027] text-[#efefef] hover:text-[#303027] rounded"
+              >
+                次へ
+              </button>
             </div>
           )}
         </div>

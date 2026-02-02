@@ -6,158 +6,136 @@ import { Prisma } from '@prisma/client'
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('[API /spells] Request received')
-    
     const session = await getServerSession(authOptions)
-    
     if (!session) {
-      console.log('[API /spells] Unauthorized - no session')
       return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
     }
 
-    console.log('[API /spells] Session valid, fetching data...')
-    
     const searchParams = request.nextUrl.searchParams
+    const spellTypes: Array<{ type: string; level?: number; biblioRankMin?: number; biblioRankMax?: number }> = []
     
-    // 複数の魔法タイプとレベルの組み合わせを取得
-    const spellTypes: Array<{ type: string; level?: number }> = []
-    let index = 0
-    while (searchParams.has(`spellTypes[${index}][type]`)) {
-      const type = searchParams.get(`spellTypes[${index}][type]`)
-      const levelStr = searchParams.get(`spellTypes[${index}][level]`)
+    // パラメータ解析
+    let i = 0
+    while (searchParams.has(`spellTypes[${i}][type]`)) {
+      const type = searchParams.get(`spellTypes[${i}][type]`)
+      const levelStr = searchParams.get(`spellTypes[${i}][level]`)
+      const bMin = searchParams.get(`spellTypes[${i}][biblioRankMin]`)
+      const bMax = searchParams.get(`spellTypes[${i}][biblioRankMax]`)
+      
       if (type) {
         spellTypes.push({
           type,
-          level: levelStr ? parseInt(levelStr) : undefined
+          level: levelStr ? parseInt(levelStr) : undefined,
+          biblioRankMin: bMin ? parseInt(bMin) : undefined,
+          biblioRankMax: bMax ? parseInt(bMax) : undefined
         })
       }
-      index++
+      i++
     }
     
-    // 後方互換性のため、古い形式もサポート
-    const spellType = searchParams.get('spellType')
-    const level = searchParams.get('level')
-    if (spellType && spellType !== 'ALL' && spellTypes.length === 0) {
-      spellTypes.push({
-        type: spellType,
-        level: level ? parseInt(level) : undefined
-      })
-    }
-    
-    const regulations = searchParams.getAll('regulations[]')
-    const name = searchParams.get('name')
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '50')
-    
-    // 妖精魔法の属性フィルタリング
     const fairyAttributes = searchParams.getAll('fairyAttributes[]')
-    const includeBasicFairy = searchParams.get('includeBasicFairy') === 'true'
-    const maxFairyRank = searchParams.get('maxFairyRank')
+    const basicFairyMaxLevel = searchParams.get('basicFairyMaxLevel')
     const includeSpecialFairy = searchParams.get('includeSpecialFairy') === 'true'
     const maxSpecialRank = searchParams.get('maxSpecialRank')
-    
-    // 神聖魔法の神フィルタリング
     const deity = searchParams.get('deity')
+    const regulations = searchParams.getAll('regulations[]')
+    const nameParam = searchParams.get('name')
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '50')
 
     const where: Prisma.SpellWhereInput = {}
 
-    // 複数の魔法タイプ+レベルの条件を構築
     if (spellTypes.length > 0) {
       const typeConditions: Prisma.SpellWhereInput[] = []
       
-      spellTypes.forEach(st => {
-        const condition: Prisma.SpellWhereInput = {
-          type: st.type as any
-        }
-        
-        // レベルが指定されている場合（指定レベル以下）
-        if (st.level !== undefined) {
-          condition.level = { lte: st.level }
-        }
-        
-        // 妖精魔法で属性が選択されている場合
-        if (st.type === 'YOSEI' && fairyAttributes.length > 0) {
+      spellTypes.forEach((st, idx) => {
+        const condition: Prisma.SpellWhereInput = { type: st.type as any }
+
+        // 秘奥魔法の処理
+        if (st.type === 'HIOU') {
+          const bMin = searchParams.get(`spellTypes[${idx}][biblioRankMin]`)
+          const bMax = searchParams.get(`spellTypes[${idx}][biblioRankMax]`)
+          
+          if (bMin && bMax) {
+            condition.biblioRank = { gte: parseInt(bMin), lte: parseInt(bMax) }
+          } else if (st.level !== undefined) {
+            const maxRank = Math.min(5, Math.ceil(st.level / 3))
+            condition.biblioRank = { gte: 1, lte: maxRank }
+          }
+        } 
+        // 妖精魔法の特殊処理
+        else if (st.type === 'YOSEI') {
           const fairyConditions: Prisma.SpellWhereInput[] = []
-          
-          // 選択された各属性の妖精魔法
-          fairyAttributes.forEach(attr => {
+          // フロントエンドから送られてきた「技能レベル（生レベル）」を優先
+          const rawSkillLevel = basicFairyMaxLevel ? parseInt(basicFairyMaxLevel) : st.level;
+
+          // 1. 基本妖精魔法: 契約属性に関わらず常に表示
+          if (rawSkillLevel !== undefined) {
             fairyConditions.push({
-              type: 'YOSEI',
-              fairyAttributes: {
-                has: attr
-              }
+              level: { lte: rawSkillLevel },
+              OR: [
+                { attribute: { contains: '基本', mode: 'insensitive' } },
+                // 属性が空、かつ fairyAttributes も空の場合を基本魔法として扱う
+                { AND: [
+                  { attribute: null },
+                  { fairyAttributes: { isEmpty: true } }
+                ]}
+              ]
             })
-          })
-          
-          // 基本妖精魔法（4属性以上契約時）
-          if (includeBasicFairy && maxFairyRank) {
+          }
+
+          // 2. 属性魔法: 契約している属性のいずれかを持つ魔法
+          if (fairyAttributes.length > 0 && st.level !== undefined) {
             fairyConditions.push({
-              type: 'YOSEI',
-              fairyAttributes: {
-                isEmpty: true
-              },
-              name: {
-                contains: '基本妖精魔法'
-              },
-              level: {
-                lte: parseInt(maxFairyRank)
-              }
+              level: { lte: st.level },
+              fairyAttributes: { hasSome: fairyAttributes }
             })
           }
           
-          // 特殊妖精魔法（全属性契約時のみ）
+          // 3. 特殊妖精魔法: 6属性契約時のみ表示
           if (includeSpecialFairy && maxSpecialRank) {
             fairyConditions.push({
-              type: 'YOSEI',
-              fairyAttributes: {
-                isEmpty: true
-              },
-              name: {
-                contains: '特殊妖精魔法'
-              },
-              level: {
-                lte: parseInt(maxSpecialRank)
-              }
+              level: { lte: parseInt(maxSpecialRank) },
+              attribute: { contains: '特殊', mode: 'insensitive' }
             })
           }
-          
-          condition.OR = fairyConditions
+
+          if (fairyConditions.length > 0) {
+            condition.OR = fairyConditions
+          } else if (st.level !== undefined) {
+            condition.level = { lte: st.level }
+          }
+        } 
+        // その他の魔法のレベル制限
+        else if (st.level !== undefined) {
+          condition.level = { lte: st.level }
         }
-        
-        // 神聖魔法で神が選択されている場合
+
+        // 神聖魔法の処理
         if (st.type === 'SHINSEI' && deity) {
-          condition.OR = [
-            { deity: deity },
-            { deity: null }
+          condition.AND = [
+            { OR: [{ deity: deity }, { deity: null }, { deity: '' }] }
           ]
         }
         
         typeConditions.push(condition)
       })
       
-      if (typeConditions.length > 0) {
-        where.OR = typeConditions
-      }
+      where.OR = typeConditions
     }
 
-    if (regulations && regulations.length > 0) {
+    if (regulations.length > 0) {
       where.regulation = { in: regulations as any }
     }
 
-    if (name) {
-      where.name = {
-        contains: name,
-      }
+    if (nameParam) {
+      where.name = { contains: nameParam, mode: 'insensitive' }
     }
 
     const [spells, total] = await Promise.all([
       prisma.spell.findMany({
         where,
-        orderBy: [
-          { type: 'asc' },
-          { level: 'asc' },
-          { name: 'asc' },
-        ],
+        orderBy: [{ type: 'asc' }, { level: 'asc' }, { name: 'asc' }],
         skip: (page - 1) * limit,
         take: limit,
       }),
@@ -166,25 +144,10 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       spells,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     })
   } catch (error) {
     console.error('[API /spells] Error:', error)
-    console.error('[API /spells] Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-    })
-    return NextResponse.json(
-      { 
-        error: '検索処理中にエラーが発生しました',
-        details: process.env.NODE_ENV !== 'production' ? (error instanceof Error ? error.message : String(error)) : undefined
-      },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: '検索処理中にエラーが発生しました' }, { status: 500 })
   }
 }

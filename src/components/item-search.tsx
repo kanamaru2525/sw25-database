@@ -155,6 +155,7 @@ export function ItemSearch() {
   const [error, setError] = useState<string>('')
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [regulations, setRegulations] = useState<Array<{ code: string; name: string }>>([])
+  const [page, setPage] = useState(1)
 
   // プリセットを取得
   useEffect(() => {
@@ -243,6 +244,7 @@ export function ItemSearch() {
         if (priceBelow) params.append('priceBelow', 'true')
       }
       
+      params.append('page', page.toString())
       const response = await fetch(`/api/items?${params.toString()}`)
       
       if (!response.ok) {
@@ -259,10 +261,15 @@ export function ItemSearch() {
   }
 
   useEffect(() => {
-    if (presets.length >= 0) { // プリセットの読み込み完了を待つ
+    setPage(1)
+  }, [itemType, rank, selectedPresetId])
+
+  useEffect(() => {
+    if (presets.length >= 0) {
       handleSearch()
     }
-  }, [itemType, rank, selectedPresetId]) // presets を依存配列から削除
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemType, rank, selectedPresetId, page])
 
   // アイテムタイプが変更されたらカテゴリをリセット
   useEffect(() => {
@@ -579,36 +586,26 @@ export function ItemSearch() {
             ))}
           </div>
 
-          {/* ページネーション情報・ページ送り */}
+          {/* ページネーション */}
           {result.pagination.totalPages > 1 && (
-            <div className="flex flex-col items-center gap-2 mt-6">
-              <div className="text-[#6d6d6d]">
-                ページ {result.pagination.page} / {result.pagination.totalPages}
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    if (result.pagination.page > 1) {
-                      setResult(r => r && { ...r, pagination: { ...r.pagination, page: r.pagination.page - 1 } })
-                    }
-                  }}
-                  disabled={result.pagination.page === 1}
-                  className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#303027] text-[#efefef] hover:text-[#303027] rounded"
-                >
-                  前へ
-                </button>
-                <button
-                  onClick={() => {
-                    if (result.pagination.page < result.pagination.totalPages) {
-                      setResult(r => r && { ...r, pagination: { ...r.pagination, page: r.pagination.page + 1 } })
-                    }
-                  }}
-                  disabled={result.pagination.page === result.pagination.totalPages}
-                  className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#303027] text-[#efefef] hover:text-[#303027] rounded"
-                >
-                  次へ
-                </button>
-              </div>
+            <div className="flex justify-center gap-2 mt-6">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#303027] text-[#efefef] hover:text-[#303027] rounded"
+              >
+                前へ
+              </button>
+              <span className="px-4 py-2 text-[#6d6d6d]">
+                {page} / {result.pagination.totalPages}
+              </span>
+              <button
+                onClick={() => setPage(p => Math.min(result.pagination.totalPages, p + 1))}
+                disabled={page === result.pagination.totalPages}
+                className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#303027] text-[#efefef] hover:text-[#303027] rounded"
+              >
+                次へ
+              </button>
             </div>
           )}
         </div>

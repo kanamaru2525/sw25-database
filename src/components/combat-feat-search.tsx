@@ -73,6 +73,7 @@ export function CombatFeatSearch() {
   const [error, setError] = useState<string>('')
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [regulations, setRegulations] = useState<Array<{ code: string; name: string }>>([])
+  const [page, setPage] = useState(1)
 
   // プリセットを取得
   useEffect(() => {
@@ -142,6 +143,7 @@ ${FEAT_TYPE_LABELS[feat.type as FeatType] || feat.type} ${regulationName}${feat.
       if (name) params.append('name', name)
       params.append('includeVagrancy', includeVagrancy.toString())
       
+      params.append('page', page.toString())
       const response = await fetch(`/api/skills?${params.toString()}`)
       
       if (!response.ok) {
@@ -158,10 +160,15 @@ ${FEAT_TYPE_LABELS[feat.type as FeatType] || feat.type} ${regulationName}${feat.
   }
 
   useEffect(() => {
+    setPage(1)
+  }, [featType, selectedPresetId, includeVagrancy])
+
+  useEffect(() => {
     if (presets.length >= 0) {
       handleSearch()
     }
-  }, [featType, selectedPresetId, includeVagrancy])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [featType, selectedPresetId, includeVagrancy, page])
 
   return (
     <div className="space-y-6">
@@ -341,36 +348,26 @@ ${FEAT_TYPE_LABELS[feat.type as FeatType] || feat.type} ${regulationName}${feat.
             ))}
           </div>
 
-          {/* ページネーション情報・ページ送り */}
+          {/* ページネーション */}
           {result.pagination.totalPages > 1 && (
-            <div className="flex flex-col items-center gap-2 mt-6">
-              <div className="text-[#6d6d6d]">
-                ページ {result.pagination.page} / {result.pagination.totalPages}
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    if (result.pagination.page > 1) {
-                      setResult(r => r && { ...r, pagination: { ...r.pagination, page: r.pagination.page - 1 } })
-                    }
-                  }}
-                  disabled={result.pagination.page === 1}
-                  className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#303027] text-[#efefef] hover:text-[#303027] rounded"
-                >
-                  前へ
-                </button>
-                <button
-                  onClick={() => {
-                    if (result.pagination.page < result.pagination.totalPages) {
-                      setResult(r => r && { ...r, pagination: { ...r.pagination, page: r.pagination.page + 1 } })
-                    }
-                  }}
-                  disabled={result.pagination.page === result.pagination.totalPages}
-                  className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#303027] text-[#efefef] hover:text-[#303027] rounded"
-                >
-                  次へ
-                </button>
-              </div>
+            <div className="flex justify-center gap-2 mt-6">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#303027] text-[#efefef] hover:text-[#303027] rounded"
+              >
+                前へ
+              </button>
+              <span className="px-4 py-2 text-[#6d6d6d]">
+                {page} / {result.pagination.totalPages}
+              </span>
+              <button
+                onClick={() => setPage(p => Math.min(result.pagination.totalPages, p + 1))}
+                disabled={page === result.pagination.totalPages}
+                className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#303027] text-[#efefef] hover:text-[#303027] rounded"
+              >
+                次へ
+              </button>
             </div>
           )}
         </div>
