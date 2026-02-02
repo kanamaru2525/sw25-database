@@ -156,7 +156,9 @@ ${categoryName} Lv.${skill.level ?? '-'} ${regulationName}${skill.duration ? ` /
       }
       
       if (name) params.append('name', name)
-            params.append('page', page.toString())      const response = await fetch(`/api/abilities?${params.toString()}`)
+      params.append('page', page.toString())
+      
+      const response = await fetch(`/api/special-skills?${params.toString()}`)
       
       if (!response.ok) {
         throw new Error('検索に失敗しました')
