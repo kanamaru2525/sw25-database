@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
         const category = row.categoryCode || row.category
         const regulation = row.regulation || ''
 
-        let customFields: Record<string, any> | null = null
+        let customFields: Record<string, any> | undefined = undefined
         const customFieldsRaw = row.customFields || row.custom_fields
         if (customFieldsRaw) {
           try {
