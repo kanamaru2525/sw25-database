@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 
 type FeatType = 'ALL' | 'PASSIVE' | 'MAJOR' | 'DECLARATION'
-type RegulationType = 'ALL' | 'TYPE_I' | 'TYPE_II' | 'TYPE_III' | 'DX' | 'ET' | 'ML' | 'MA' | 'BM' | 'AL' | 'RL' | 'BR' | 'BS' | 'AB' | 'BI' | 'DD' | 'US' | 'TS'
 
 interface CombatFeat {
   id: string
@@ -41,27 +40,6 @@ const FEAT_TYPE_LABELS: Record<FeatType, string> = {
   DECLARATION: '宣言特技',
 }
 
-const REGULATION_LABELS: Record<RegulationType, string> = {
-  ALL: 'すべて',
-  TYPE_I: 'Ⅰ',
-  TYPE_II: 'Ⅱ',
-  TYPE_III: 'Ⅲ',
-  DX: 'DX',
-  ET: 'ET',
-  ML: 'ML',
-  MA: 'MA',
-  BM: 'BM',
-  AL: 'AL',
-  RL: 'RL',
-  BR: 'BR',
-  BS: 'BS',
-  AB: 'AB',
-  BI: 'BI',
-  DD: 'DD',
-  US: 'US',
-  TS: 'TS',
-}
-
 export function CombatFeatSearch() {
   const [featType, setFeatType] = useState<FeatType>('ALL')
   const [selectedPresetId, setSelectedPresetId] = useState<string>('ALL')
@@ -74,6 +52,11 @@ export function CombatFeatSearch() {
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [regulations, setRegulations] = useState<Array<{ code: string; name: string }>>([])
   const [page, setPage] = useState(1)
+
+  const getRegulationLabel = (code: string) => {
+    if (code === 'ALL') return 'すべて'
+    return regulations.find((r) => r.code === code)?.name || code
+  }
 
   // プリセットを取得
   useEffect(() => {
@@ -287,8 +270,8 @@ ${FEAT_TYPE_LABELS[feat.type as FeatType] || feat.type} ${regulationName}${feat.
                       <span className="inline-flex items-center px-2 py-1 bg-[#6d6d6d]/20 text-[#efefef] rounded">
                         {FEAT_TYPE_LABELS[feat.type as FeatType] || feat.type}
                       </span>
-                      <span>{regulations.find((r) => r.code === feat.regulation)?.name || feat.regulation}</span>
-                      <span className="text-[#6d6d6d]">{feat.page}</span>
+                      <span className="text-slate-400">{getRegulationLabel(feat.regulation)}</span>
+                      <span className="text-[#6d6d6d]">ページ-{feat.page}</span>
                     </div>
                   </div>
                   <button
@@ -321,27 +304,30 @@ ${FEAT_TYPE_LABELS[feat.type as FeatType] || feat.type} ${regulationName}${feat.
                         <span className="text-[#6d6d6d]">前提:</span>
                         <span className="ml-1 text-[#efefef]">{feat.requirement}</span>
                       </span>
-                      <span className="text-[#6d6d6d]">/</span>
                     </>
                   )}
                   {feat.target && (
                     <>
+                      <span className="text-[#6d6d6d]">/</span>
                       <span>
                         <span className="text-[#6d6d6d]">対象:</span>
                         <span className="ml-1 text-[#efefef]">{feat.target}</span>
                       </span>
-                      <span className="text-[#6d6d6d]">/</span>
+                      
                     </>
                   )}
                   {feat.risk && (
-                    <span>
+                    <>
+                      <span className="text-[#6d6d6d]">/</span>
+                      <span>  
                       <span className="text-[#6d6d6d]">宣言:</span>
                       <span className="ml-1 text-[#efefef]">{feat.risk}</span>
                     </span>
+                    </>
                   )}
                 </div>
 
-                <div className="text-sm text-[#6d6d6d] mt-4 pt-4 border-t border-[#6d6d6d] leading-relaxed">
+                <div className="text-sm text-slate-300 mt-4 pt-4 border-t border-slate-700 whitespace-pre-wrap leading-relaxed">
                   {feat.summary}
                 </div>
               </div>

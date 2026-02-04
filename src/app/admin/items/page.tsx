@@ -1,13 +1,22 @@
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/app/api/auth/[...nextauth]/route"
-import { redirect } from "next/navigation"
-import { Header } from "@/components/header"
+'use client'
+
+import { useSession } from 'next-auth/react'
+import { redirect } from 'next/navigation'
+import { Header } from '@/components/header'
 import { ItemManager } from '@/components/item-manager'
 
-export default async function AdminItemsPage() {
-  const session = await getServerSession(authOptions)
-  
-  if (!session || !session.user.isAdmin) {
+export default function AdminItemsPage() {
+  const { data: session, status } = useSession()
+
+  if (status === 'loading') {
+    return <div>読み込み中...</div>
+  }
+
+  if (!session?.user?.email) {
+    redirect('/auth/signin')
+  }
+
+  if (!session.user.isAdmin) {
     redirect('/')
   }
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { prisma } from '@/lib/prisma'
+import { getRegulationMapping, normalizeRegulation } from '@/lib/regulation-mapping'
 import Papa from 'papaparse'
 
 // 魔法タイプのマッピング
@@ -18,27 +19,6 @@ const SPELL_TYPE_MAP: { [key: string]: string } = {
   '秘奥魔法': 'HIOU',
 }
 
-// レギュレーションのマッピング
-const REGULATION_MAP: { [key: string]: string } = {
-  'Ⅰ': 'TYPE_I',
-  'Ⅱ': 'TYPE_II',
-  'Ⅲ': 'TYPE_III',
-  'DX': 'DX',
-  'ET': 'ET',
-  'ML': 'ML',
-  'MA': 'MA',
-  'BM': 'BM',
-  'AL': 'AL',
-  'RL': 'RL',
-  'BR': 'BR',
-  'BS': 'BS',
-  'AB': 'AB',
-  'BI': 'BI',
-  'DD': 'DD',
-  'US': 'US',
-  'TS': 'TS',
-}
-
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions)
   
@@ -47,11 +27,17 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { csv } = await request.json()
+    const formData = await request.formData()
+    const file = formData.get('file') as File
 
-    if (!csv) {
-      return NextResponse.json({ error: 'CSVデータが必要です' }, { status: 400 })
+    if (!file) {
+      return NextResponse.json({ error: 'CSVファイルが必要です' }, { status: 400 })
     }
+
+    const csv = await file.text()
+
+    // レギュレーションマッピングを取得
+    const regulationMapping = await getRegulationMapping()
 
     // Parse CSV
     const parsed = Papa.parse(csv, {
@@ -66,7 +52,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const rows = parsed.data as any[]
+    const rows = parsed.data as Array<Record<string, string | number>>
     let successCount = 0
     const errors: string[] = []
 
@@ -83,12 +69,12 @@ export async function POST(request: NextRequest) {
 
         // Parse fairyAttributes (comma-separated string to array)
         const fairyAttributes = row.fairyAttributes
-          ? row.fairyAttributes.split(',').map((s: string) => s.trim()).filter(Boolean)
+          ? String(row.fairyAttributes).split(',').map((s: string) => s.trim()).filter(Boolean)
           : []
 
         // Map type and regulation
-        const spellType = SPELL_TYPE_MAP[row.type] || row.type
-        const regulation = REGULATION_MAP[row.regulation] || row.regulation
+        const spellType = SPELL_TYPE_MAP[String(row.type)] || String(row.type)
+        const regulation = normalizeRegulation(String(row.regulation), regulationMapping)
 
         // Map magisphere (大/中/小 -> LARGE/MEDIUM/SMALL)
         const MAGISPHERE_MAP: Record<string, 'LARGE' | 'MEDIUM' | 'SMALL'> = {
@@ -96,27 +82,28 @@ export async function POST(request: NextRequest) {
           '中': 'MEDIUM',
           '小': 'SMALL',
         }
-        const magisphere = row.magisphere && MAGISPHERE_MAP[row.magisphere]
-          ? MAGISPHERE_MAP[row.magisphere]
+        const magisphere = row.magisphere && MAGISPHERE_MAP[String(row.magisphere)]
+          ? MAGISPHERE_MAP[String(row.magisphere)]
           : null
 
         await prisma.spell.create({
           data: {
-            name: row.name,
-            type: spellType,
-            level: parseInt(row.level),
-            target: row.target || '',
-            range: row.range || '',
-            shape: row.shape || '',
-            duration: row.duration || '',
-            resistance: row.resistance || '',
-            cost: row.cost || '',
-            attribute: row.attribute || null,
+            name: String(row.name),
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            type: spellType as any,
+            level: parseInt(String(row.level)),
+            target: row.target ? String(row.target) : '',
+            range: row.range ? String(row.range) : '',
+            shape: row.shape ? String(row.shape) : '',
+            duration: row.duration ? String(row.duration) : '',
+            resistance: row.resistance ? String(row.resistance) : '',
+            cost: row.cost ? String(row.cost) : '',
+            attribute: row.attribute ? String(row.attribute) : null,
             fairyAttributes,
-            biblioRank: row.biblioRank ? parseInt(row.biblioRank) : null,
-            summary: row.summary || '',
+            biblioRank: row.biblioRank ? parseInt(String(row.biblioRank)) : null,
+            summary: row.summary ? String(row.summary) : '',
             magisphere: magisphere,
-            page: row.page || '',
+            page: row.page ? String(row.page) : '',
             regulation: regulation,
           },
         })

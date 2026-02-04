@@ -3,18 +3,9 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
-type SkillCategory =
-  | 'ENHANCER'
-  | 'BARD_SONG'
-  | 'BARD_FINALE'
-  | 'RIDER'
-  | 'ALCHEMIST'
-  | 'GEOMANCER'
-  | 'WARLEADER_KOUHAI'
-  | 'WARLEADER_JINRITSU'
-  | 'DARKHUNTER'
+type SkillCategory = string
 
-type FieldType = 'BOOLEAN' | 'TEXT' | 'NUMBER' | 'SELECT' | 'TEXTAREA'
+type FieldType = string
 
 interface SkillFieldConfig {
   id: string
@@ -23,7 +14,7 @@ interface SkillFieldConfig {
   fieldLabel: string
   fieldType: FieldType
   placeholder: string | null
-  options: any
+  options: Record<string, string | number> | null
   order: number
   required: boolean
 }
@@ -33,7 +24,7 @@ interface SkillCategoryConfig {
   code: SkillCategory
   name: string
   order: number
-  customFields: SkillFieldConfig[]
+  fields: SkillFieldConfig[]
 }
 
 export default function CategoryManager() {
@@ -52,7 +43,7 @@ export default function CategoryManager() {
   const [fieldFormData, setFieldFormData] = useState({
     fieldKey: '',
     fieldLabel: '',
-    fieldType: 'TEXT' as FieldType,
+    fieldType: 'text' as FieldType,
     placeholder: '',
     order: 1,
     required: false,
@@ -85,6 +76,7 @@ export default function CategoryManager() {
 
   useEffect(() => {
     fetchCategories()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const openFieldModal = (category: SkillCategoryConfig, field?: SkillFieldConfig) => {
@@ -94,7 +86,7 @@ export default function CategoryManager() {
       setFieldFormData({
         fieldKey: field.fieldKey,
         fieldLabel: field.fieldLabel,
-        fieldType: field.fieldType,
+        fieldType: (field.fieldType || '').toString().toLowerCase(),
         placeholder: field.placeholder || '',
         order: field.order,
         required: field.required,
@@ -104,9 +96,9 @@ export default function CategoryManager() {
       setFieldFormData({
         fieldKey: '',
         fieldLabel: '',
-        fieldType: 'TEXT',
+        fieldType: 'text',
         placeholder: '',
-        order: (category.customFields.length + 1) * 10,
+        order: (category.fields.length + 1) * 10,
         required: false,
       })
     }
@@ -344,7 +336,7 @@ export default function CategoryManager() {
                 </div>
 
                 {/* カスタムフィールド一覧 */}
-                {category.customFields.length > 0 ? (
+                {category.fields.length > 0 ? (
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead className="bg-[#6d6d6d]/30">
@@ -370,7 +362,7 @@ export default function CategoryManager() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-[#6d6d6d]">
-                        {category.customFields.map((field) => (
+                        {category.fields.map((field) => (
                           <tr key={field.id} className="hover:bg-[#6d6d6d]/20">
                             <td className="px-4 py-3 text-[#efefef]">
                               {field.order}
@@ -481,11 +473,11 @@ export default function CategoryManager() {
                       className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
                       required
                     >
-                      <option value="TEXT">テキスト</option>
-                      <option value="NUMBER">数値</option>
-                      <option value="BOOLEAN">真偽値</option>
-                      <option value="TEXTAREA">テキストエリア</option>
-                      <option value="SELECT">選択</option>
+                      <option value="text">テキスト</option>
+                      <option value="number">数値</option>
+                      <option value="boolean">真偽値</option>
+                      <option value="textarea">テキストエリア</option>
+                      <option value="select">選択</option>
                     </select>
                   </div>
 
@@ -578,9 +570,7 @@ export default function CategoryManager() {
               {!editingCategory && (
                 <div className="mb-6 p-4 bg-yellow-900/20 border border-yellow-600 rounded-lg">
                   <p className="text-yellow-200 text-sm">
-                    <strong>注意:</strong> カテゴリーを追加した後、<code className="bg-yellow-900/30 px-1 rounded">prisma/schema.prisma</code>ファイルの
-                    <code className="bg-yellow-900/30 px-1 rounded">SkillCategory</code>enumに同じコード名を追加し、
-                    <code className="bg-yellow-900/30 px-1 rounded">npx prisma db push</code>を実行してデータベースに反映させる必要があります。
+                    <strong>注意:</strong> カテゴリーを追加した後は、管理画面から入力フォームが自動的に生成されます。必要に応じてフィールド設定も追加してください。
                   </p>
                 </div>
               )}

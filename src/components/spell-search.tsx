@@ -4,8 +4,6 @@ import { useState, useEffect } from 'react'
 
 type SpellType = 'ALL' | 'SHINGO' | 'SOREI' | 'SHINCHI' | 'SHINSEI' | 'MADOKI' | 'YOSEI' | 'SHINRA' | 'SHOI' | 'NARAKU' | 'HIOU'
 
-type RegulationType = 'ALL' | 'TYPE_I' | 'TYPE_II' | 'TYPE_III' | 'DX' | 'ET' | 'ML' | 'MA' | 'BM' | 'AL' | 'RL' | 'BR' | 'BS' | 'AB' | 'BI' | 'DD' | 'US' | 'TS'
-
 interface Spell {
   id: string
   name: string
@@ -58,27 +56,6 @@ const SPELL_TYPE_LABELS: Record<SpellType, string> = {
   HIOU: '秘奥魔法',
 }
 
-const REGULATION_LABELS: Record<RegulationType, string> = {
-  ALL: 'すべて',
-  TYPE_I: 'Ⅰ',
-  TYPE_II: 'Ⅱ',
-  TYPE_III: 'Ⅲ',
-  DX: 'DX',
-  ET: 'ET',
-  ML: 'ML',
-  MA: 'MA',
-  BM: 'BM',
-  AL: 'AL',
-  RL: 'RL',
-  BR: 'BR',
-  BS: 'BS',
-  AB: 'AB',
-  BI: 'BI',
-  DD: 'DD',
-  US: 'US',
-  TS: 'TS',
-}
-
 // 妖精魔法のランク表ロジック
 const FAIRY_RANK_DATA = {
   FOUR_ELEMENTS: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
@@ -99,16 +76,21 @@ export function SpellSearch() {
   const [spellTypeLevels, setSpellTypeLevels] = useState<SpellTypeLevel[]>([{ type: 'ALL', level: '' }])
   const [selectedPresetId, setSelectedPresetId] = useState<string>('ALL')
   const [presets, setPresets] = useState<RegulationPreset[]>([])
+  const [regulations, setRegulations] = useState<Array<{ code: string; name: string }>>([])
   const [name, setName] = useState<string>('')
   const [result, setResult] = useState<SearchResult | null>(null)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string>('')
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   
   const [selectedFairyAttributes, setSelectedFairyAttributes] = useState<FairyAttribute[]>([])
   const [selectedDeity, setSelectedDeity] = useState<string>('')
   const [deities, setDeities] = useState<string[]>([])
+
+  const getRegulationLabel = (code: string) => {
+    if (code === 'ALL') return 'すべて'
+    return regulations.find((r) => r.code === code)?.name || code
+  }
 
   useEffect(() => {
     const fetchPresets = async () => {
@@ -124,6 +106,21 @@ export function SpellSearch() {
     }
     fetchPresets()
   }, [])
+
+  useEffect(() => {
+    const fetchRegulations = async () => {
+      try {
+        const response = await fetch('/api/regulations')
+        if (response.ok) {
+          const data = await response.json()
+          setRegulations(data.regulations.map((r: {code: string; name: string}) => ({ code: r.code, name: r.name })))
+        }
+      } catch (error) {
+        console.error('Failed to fetch regulations:', error)
+      }
+    }
+    fetchRegulations()
+  }, [])
   
   useEffect(() => {
     const fetchDeities = async () => {
@@ -131,7 +128,7 @@ export function SpellSearch() {
         const response = await fetch('/api/deities')
         if (response.ok) {
           const data = await response.json()
-          setDeities(data.deities.map((d: any) => d.name))
+          setDeities(data.deities.map((d: {name: string}) => d.name))
         }
       } catch (err) {
         console.error('Failed to fetch deities:', err)
@@ -151,7 +148,7 @@ export function SpellSearch() {
 
   const handleCopy = async (spell: Spell) => {
     const text = `${spell.name}
-${SPELL_TYPE_LABELS[spell.type as SpellType] || spell.type} Lv.${spell.level} ${REGULATION_LABELS[spell.regulation as RegulationType] || spell.regulation}${spell.magisphere ? ' [魔法圏]' : ''}
+${SPELL_TYPE_LABELS[spell.type as SpellType] || spell.type} Lv.${spell.level} ${getRegulationLabel(spell.regulation)}${spell.magisphere ? ' [魔法圏]' : ''}
 射程:${spell.range} / 形状:${spell.shape} / 持続時間:${spell.duration} / 消費:${spell.cost} / 対象:${spell.target} / 抵抗:${spell.resistance}${spell.attribute ? ` / 属性:${spell.attribute}` : ''}${spell.fairyAttributes.length > 0 ? ` / 妖精属性:${spell.fairyAttributes.join(', ')}` : ''}${spell.deity ? ` / 神:${spell.deity}` : ''}${spell.biblioRank !== null ? ` / 文献ランク:${spell.biblioRank}` : ''}`
 
     try {
@@ -165,9 +162,17 @@ ${SPELL_TYPE_LABELS[spell.type as SpellType] || spell.type} Lv.${spell.level} ${
 
   const handleSearch = async () => {
     setLoading(true)
-    setError('')
     try {
       const params = new URLSearchParams()
+      
+      // デバッグログ：妖精魔法の検索条件
+      const yoseiSpellType = spellTypeLevels.find(stl => stl.type === 'YOSEI')
+      if (yoseiSpellType) {
+        console.log('=== 妖精魔法検索 デバッグログ ===')
+        console.log('選択レベル:', yoseiSpellType.level)
+        console.log('選択属性:', selectedFairyAttributes)
+        console.log('属性数:', selectedFairyAttributes.length)
+      }
       
       spellTypeLevels.forEach((stl, index) => {
         if (stl.type === 'ALL') return;
@@ -181,18 +186,23 @@ ${SPELL_TYPE_LABELS[spell.type as SpellType] || spell.type} Lv.${spell.level} ${
         else if (stl.type === 'YOSEI' && stl.level) {
           const lv = parseInt(stl.level)
           const attrCount = selectedFairyAttributes.length
-          const maxRank = getFairyMaxRank(lv, attrCount)
           
-          // 属性魔法の検索条件ランク
-          params.append(`spellTypes[${index}][level]`, maxRank.toString())
           // 基本魔法を常に表示するためのパラメータ
           params.append('includeBasicFairy', 'true')
           params.append('basicFairyMaxLevel', lv.toString())
+          
+          // 属性魔法がある場合のみ属性魔法ランク設定
+          if (attrCount > 0) {
+            const maxRank = getFairyMaxRank(lv, attrCount)
+            params.append(`spellTypes[${index}][level]`, maxRank.toString())
+            console.log('属性魔法ランク:', maxRank)
+          }
           
           if (attrCount === 6) {
             const specialRank = getFairyMaxRank(lv, 6, true)
             params.append('includeSpecialFairy', 'true')
             params.append('maxSpecialRank', specialRank.toString())
+            console.log('特殊魔法ランク:', specialRank)
           }
         }
         else if (stl.level) {
@@ -211,12 +221,38 @@ ${SPELL_TYPE_LABELS[spell.type as SpellType] || spell.type} Lv.${spell.level} ${
       if (name) params.append('name', name)
       params.append('page', page.toString())
 
-      const response = await fetch(`/api/spells?${params.toString()}`)
+      const url = `/api/spells?${params.toString()}`
+      console.log('リクエストURL:', url)
+      
+      const response = await fetch(url)
       if (!response.ok) throw new Error('検索に失敗しました')
       const data = await response.json()
+      
+      // デバッグログ：検索結果
+      if (yoseiSpellType) {
+        console.log('検索結果件数:', data.pagination.total)
+        console.log('取得魔法数:', data.spells.length)
+        
+        // 基本魔法、属性魔法、特殊魔法の分類
+        const basicFairy = data.spells.filter((s: Spell) => 
+          s.fairyAttributes.includes('基本')
+        )
+        const attributeFairy = data.spells.filter((s: Spell) => 
+          s.fairyAttributes.length > 0 && !s.fairyAttributes.includes('基本') && !s.fairyAttributes.includes('特殊')
+        )
+        const specialFairy = data.spells.filter((s: Spell) => 
+          s.fairyAttributes.includes('特殊')
+        )
+        
+        console.log('基本妖精魔法:', basicFairy.length, '件')
+        console.log('属性妖精魔法:', attributeFairy.length, '件')
+        console.log('特殊妖精魔法:', specialFairy.length, '件')
+        console.log('================================')
+      }
+      
       setResult(data)
     } catch (err) {
-      setError(err instanceof Error ? err.message : '検索中にエラーが発生しました')
+      console.error('検索エラー:', err)
     } finally {
       setLoading(false)
     }
@@ -228,6 +264,7 @@ ${SPELL_TYPE_LABELS[spell.type as SpellType] || spell.type} Lv.${spell.level} ${
 
   useEffect(() => {
     handleSearch()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spellTypeLevels, selectedPresetId, selectedFairyAttributes, selectedDeity, page])
 
   return (
@@ -408,8 +445,8 @@ ${SPELL_TYPE_LABELS[spell.type as SpellType] || spell.type} Lv.${spell.level} ${
                         {SPELL_TYPE_LABELS[spell.type as SpellType] || spell.type}
                       </span>
                       <span className="text-slate-400">Lv.{spell.level}</span>
-                      <span className="text-slate-400">{REGULATION_LABELS[spell.regulation as RegulationType] || spell.regulation}</span>
-                      <span className="text-slate-500">{spell.page}</span>
+                      <span className="text-slate-400">{getRegulationLabel(spell.regulation)}</span>
+                      <span className="text-slate-500">ページ-{spell.page}</span>
                       {spell.magisphere && (
                         <span className="inline-flex items-center px-2 py-1 bg-blue-500/20 text-blue-300 rounded">魔法圏</span>
                       )}

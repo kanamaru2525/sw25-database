@@ -2,32 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { prisma } from '@/lib/prisma'
+import { getRegulationMapping, normalizeRegulation } from '@/lib/regulation-mapping'
 import Papa from 'papaparse'
 
 const FEAT_TYPE_MAP: { [key: string]: string } = {
   '常時特技': 'PASSIVE',
   '主動作特技': 'MAJOR',
   '宣言特技': 'DECLARATION',
-}
-
-const REGULATION_MAP: { [key: string]: string } = {
-  'Ⅰ': 'TYPE_I',
-  'Ⅱ': 'TYPE_II',
-  'Ⅲ': 'TYPE_III',
-  'DX': 'DX',
-  'ET': 'ET',
-  'ML': 'ML',
-  'MA': 'MA',
-  'BM': 'BM',
-  'AL': 'AL',
-  'RL': 'RL',
-  'BR': 'BR',
-  'BS': 'BS',
-  'AB': 'AB',
-  'BI': 'BI',
-  'DD': 'DD',
-  'US': 'US',
-  'TS': 'TS',
 }
 
 export async function POST(request: NextRequest) {
@@ -44,6 +25,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'CSVデータが必要です' }, { status: 400 })
     }
 
+    // レギュレーションマッピングを取得
+    const regulationMapping = await getRegulationMapping()
+
     const parsed = Papa.parse(csv, {
       header: true,
       skipEmptyLines: true,
@@ -56,7 +40,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const rows = parsed.data as any[]
+    const rows = parsed.data as Array<Record<string, string | number>>
     let successCount = 0
     const errors: string[] = []
 
@@ -69,18 +53,19 @@ export async function POST(request: NextRequest) {
           continue
         }
 
-        const featType = FEAT_TYPE_MAP[row.type] || row.type
-        const regulation = REGULATION_MAP[row.regulation] || row.regulation
+        const featType = FEAT_TYPE_MAP[String(row.type)] || String(row.type)
+        const regulation = normalizeRegulation(String(row.regulation), regulationMapping)
 
         await prisma.combatFeat.create({
           data: {
-            name: row.name,
-            type: featType,
-            requirement: row.requirement || null,
-            target: row.target || null,
-            risk: row.risk || null,
-            summary: row.summary || '',
-            page: row.page || '',
+            name: String(row.name),
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            type: featType as any,
+            requirement: row.requirement ? String(row.requirement) : null,
+            target: row.target ? String(row.target) : null,
+            risk: row.risk ? String(row.risk) : null,
+            summary: row.summary ? String(row.summary) : '',
+            page: row.page ? String(row.page) : '',
             regulation: regulation,
           },
         })

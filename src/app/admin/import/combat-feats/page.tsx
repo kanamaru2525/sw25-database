@@ -44,7 +44,7 @@ export default async function CombatFeatsImportPage() {
           fieldNotes={[
             { field: 'type', note: 'PASSIVE, MAJOR, DECLARATION' },
             { field: 'vagrancy', note: 'ヴァグランツかどうか。true/false または 1/0' },
-            { field: 'regulation', note: 'Ⅰ, Ⅱ, Ⅲ, DX, ET, ML, MA, BM, AL, RL, BR, BS, AB, BI, DD, US, TS, AZ' }
+            { field: 'regulation', note: '管理画面で登録したレギュレーションのコードまたは名称' }
           ]}
         />
       </main>

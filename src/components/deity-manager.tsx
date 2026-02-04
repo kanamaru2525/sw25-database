@@ -90,19 +90,27 @@ export function DeityManager() {
   return (
     <div className="space-y-6">
       {/* ヘッダー */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
         <Link
           href="/admin"
-          className="text-[#6d6d6d] hover:text-[#efefef]"
+          className="text-[#6d6d6d] hover:text-[#efefef] text-sm sm:text-base"
         >
           ← 管理者画面に戻る
         </Link>
-        <button
-          onClick={() => setIsCreating(true)}
-          className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] text-[#efefef] hover:text-[#303027] rounded-lg transition-colors"
-        >
-          神を追加
-        </button>
+        <div className="space-x-2 flex flex-wrap gap-2">
+          <Link
+            href="/admin/import/deities"
+            className="px-3 sm:px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] text-[#efefef] hover:text-[#303027] rounded-lg transition-colors text-sm sm:text-base whitespace-nowrap"
+          >
+          CSVインポート
+          </Link>
+          <button
+            onClick={() => setIsCreating(true)}
+            className="px-3 sm:px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] text-[#efefef] hover:text-[#303027] rounded-lg transition-colors text-sm sm:text-base whitespace-nowrap"
+          >
+            神を追加
+          </button>
+        </div>
       </div>
 
       {/* トースト通知 */}
@@ -122,17 +130,17 @@ export function DeityManager() {
       {loading ? (
         <div className="text-center py-12 text-[#6d6d6d]">読み込み中...</div>
       ) : (
-        <div className="bg-[#303027]/50 backdrop-blur-sm rounded-xl border border-[#6d6d6d] overflow-hidden">
-          <table className="w-full">
+        <div className="bg-[#303027]/50 backdrop-blur-sm rounded-xl border border-[#6d6d6d] overflow-x-auto">
+          <table className="w-full min-w-full">
             <thead className="bg-[#303027]">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#6d6d6d] uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-[#6d6d6d] uppercase tracking-wider">
                   名前
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[#6d6d6d] uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-[#6d6d6d] uppercase tracking-wider">
                   表示順
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-[#6d6d6d] uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-[#6d6d6d] uppercase tracking-wider">
                   操作
                 </th>
               </tr>
@@ -140,18 +148,18 @@ export function DeityManager() {
             <tbody className="divide-y divide-[#6d6d6d]">
               {deities.map((deity) => (
                 <tr key={deity.id} className="hover:bg-[#303027]/30">
-                  <td className="px-6 py-4 text-[#efefef]">{deity.name}</td>
-                  <td className="px-6 py-4 text-[#efefef]">{deity.order}</td>
-                  <td className="px-6 py-4 text-right space-x-2">
+                  <td className="px-3 sm:px-6 py-4 text-[#efefef] text-sm sm:text-base">{deity.name}</td>
+                  <td className="px-3 sm:px-6 py-4 text-[#efefef] text-sm sm:text-base">{deity.order}</td>
+                  <td className="px-3 sm:px-6 py-4 text-right space-x-2">
                     <button
                       onClick={() => setEditingDeity(deity)}
-                      className="text-[#6d6d6d] hover:text-[#efefef]"
+                      className="text-[#6d6d6d] hover:text-[#efefef] text-xs sm:text-sm"
                     >
                       編集
                     </button>
                     <button
                       onClick={() => handleDelete(deity.id)}
-                      className="px-3 py-1 bg-[#a44949] hover:bg-[#b85656] text-white rounded transition-colors"
+                      className="px-2 sm:px-3 py-1 bg-[#a44949] hover:bg-[#b85656] text-white rounded transition-colors text-xs sm:text-sm whitespace-nowrap"
                     >
                       削除
                     </button>
@@ -201,14 +209,14 @@ function DeityForm({
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-[#303027] rounded-xl p-6 max-w-md w-full border border-[#6d6d6d]">
-        <h2 className="text-2xl font-bold text-[#efefef] mb-6">
+      <div className="bg-[#303027] rounded-xl p-4 sm:p-6 w-full max-w-md border border-[#6d6d6d]">
+        <h2 className="text-xl sm:text-2xl font-bold text-[#efefef] mb-6">
           {deity ? '神を編集' : '神を追加'}
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-[#efefef] mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-[#efefef] mb-2">
               名前
             </label>
             <input
@@ -216,33 +224,33 @@ function DeityForm({
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
-              className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
+              className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef] text-sm"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#efefef] mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-[#efefef] mb-2">
               表示順
             </label>
             <input
               type="number"
               value={formData.order}
               onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
-              className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
+              className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef] text-sm"
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-4">
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4">
             <button
               type="button"
               onClick={onCancel}
-              className="px-4 py-2 bg-[#303027] border border-[#6d6d6d] hover:bg-[#6d6d6d] text-[#efefef] rounded-lg transition-colors"
+              className="px-4 py-2 bg-[#303027] border border-[#6d6d6d] hover:bg-[#6d6d6d] text-[#efefef] rounded-lg transition-colors text-sm sm:text-base"
             >
               キャンセル
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] text-[#efefef] hover:text-[#303027] rounded-lg transition-colors"
+              className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] text-[#efefef] hover:text-[#303027] rounded-lg transition-colors text-sm sm:text-base"
             >
               保存
             </button>

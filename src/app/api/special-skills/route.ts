@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     const where: Prisma.SpecialSkillWhereInput = {}
 
     if (category && category !== 'ALL') {
-      where.category = category as any
+      where.categoryCode = category
     }
 
     if (level) {

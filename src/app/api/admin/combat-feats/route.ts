@@ -1,16 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-// マップ値をenum値に変換
-const mapToEnumValue = (code: string): string => {
-  const mapping: Record<string, string> = {
-    'Ⅰ': 'TYPE_I',
-    'Ⅱ': 'TYPE_II',
-    'Ⅲ': 'TYPE_III',
-  }
-  return mapping[code] || code
-}
-
 // GET: 特技一覧取得
 export async function GET(request: NextRequest) {
   try {
@@ -64,7 +54,7 @@ export async function POST(request: NextRequest) {
         risk: data.risk || null,
         summary: data.summary,
         page: data.page,
-        regulation: mapToEnumValue(data.regulation || 'TYPE_I') as any,
+        regulation: data.regulation || '',
         vagrancy: data.vagrancy || false,
       },
     })

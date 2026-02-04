@@ -1,20 +1,19 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { SkillCategory } from '@prisma/client'
 
 // POST: カテゴリーを一括作成（初期化用）
 export async function POST() {
   try {
     const categories = [
-      { code: SkillCategory.ENHANCER, name: '練技', order: 1 },
-      { code: SkillCategory.BARD_SONG, name: '呪歌', order: 2 },
-      { code: SkillCategory.BARD_FINALE, name: '終律', order: 3 },
-      { code: SkillCategory.RIDER, name: '騎芸', order: 4 },
-      { code: SkillCategory.ALCHEMIST, name: '賦術', order: 5 },
-      { code: SkillCategory.GEOMANCER, name: '鎮域', order: 6 },
-      { code: SkillCategory.WARLEADER_KOUHAI, name: '鼓吠', order: 7 },
-      { code: SkillCategory.WARLEADER_JINRITSU, name: '陣律', order: 8 },
-      { code: SkillCategory.DARKHUNTER, name: '相域', order: 9 },
+      { code: 'ENHANCER', name: '練技', order: 1 },
+      { code: 'BARD_SONG', name: '呪歌', order: 2 },
+      { code: 'BARD_FINALE', name: '終律', order: 3 },
+      { code: 'RIDER', name: '騎芸', order: 4 },
+      { code: 'ALCHEMIST', name: '賦術', order: 5 },
+      { code: 'GEOMANCER', name: '鎮域', order: 6 },
+      { code: 'WARLEADER_KOUHAI', name: '鼓吠', order: 7 },
+      { code: 'WARLEADER_JINRITSU', name: '陣律', order: 8 },
+      { code: 'DARKHUNTER', name: '相域', order: 9 },
     ]
 
     const results = []

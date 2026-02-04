@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
         order: data.order,
       },
       include: {
-        customFields: {
+        fields: {
           orderBy: { order: 'asc' },
         },
       },

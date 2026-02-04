@@ -5,7 +5,6 @@ import Link from 'next/link'
 
 type ItemType = 'weapon' | 'armor' | 'accessory'
 type Rank = 'B' | 'A' | 'S' | 'SS'
-type RegulationType = 'TYPE_I' | 'TYPE_II' | 'TYPE_III' | 'DX' | 'ET' | 'ML' | 'MA' | 'BM' | 'AL' | 'RL' | 'BR' | 'BS' | 'AB' | 'BI' | 'DD' | 'US' | 'TS'
 
 interface Item {
   id: string
@@ -47,12 +46,6 @@ const ARMOR_CATEGORIES = [
 const ACCESSORY_USAGES = [
   '1H', '2H', '頭', '顔', '耳', '首', '背中', '手', '腰', '足', '任意', 'なし',
 ]
-
-const REGULATION_LABELS: Record<RegulationType, string> = {
-  TYPE_I: 'Ⅰ', TYPE_II: 'Ⅱ', TYPE_III: 'Ⅲ', DX: 'DX', ET: 'ET', ML: 'ML',
-  MA: 'MA', BM: 'BM', AL: 'AL', RL: 'RL', BR: 'BR', BS: 'BS',
-  AB: 'AB', BI: 'BI', DD: 'DD', US: 'US', TS: 'TS',
-}
 
 export function ItemManager() {
   const [itemType, setItemType] = useState<ItemType>('weapon')
@@ -198,7 +191,7 @@ export function ItemManager() {
       {/* Toast通知 */}
       {toast && (
         <div
-          className={`fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg animate-slide-up ${
+          className={`fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg animate-slide-up z-50 ${
             toast.type === 'success' ? 'bg-[#6d6d6d] text-[#efefef]' : 'bg-[#303027] text-[#efefef] border border-[#6d6d6d]'
           }`}
         >
@@ -207,23 +200,23 @@ export function ItemManager() {
       )}
 
       {/* ヘッダー */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
         <Link
           href="/admin"
-          className="text-[#6d6d6d] hover:text-[#efefef] transition-colors"
+          className="text-[#6d6d6d] hover:text-[#efefef] transition-colors text-sm sm:text-base"
         >
           ← 管理者画面に戻る
         </Link>
-        <div className="flex gap-4">
+        <div className="flex gap-2 sm:gap-4 flex-wrap w-full sm:w-auto">
           <Link
-            href={`/admin/import/${itemType === 'weapon' ? 'weapons' : itemType === 'armor' ? 'armors' : 'accessories'}`}
-            className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] text-[#efefef] hover:text-[#303027] rounded-lg transition-colors"
+            href="/admin/import/items"
+            className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] text-[#efefef] hover:text-[#303027] rounded-lg transition-colors text-center text-sm sm:text-base"
           >
             CSVインポート
           </Link>
           <button
             onClick={() => setIsCreating(true)}
-            className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] text-[#efefef] hover:text-[#303027] rounded-lg transition-colors"
+            className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] text-[#efefef] hover:text-[#303027] rounded-lg transition-colors text-sm sm:text-base"
           >
             新規追加
           </button>
@@ -232,8 +225,8 @@ export function ItemManager() {
 
       {/* アイテムタイプ選択 */}
       <div className="bg-[#303027] backdrop-blur-sm rounded-xl p-4 border border-[#6d6d6d]">
-        <div className="flex gap-4 items-center">
-          <label className="text-sm font-medium text-[#efefef]">種別:</label>
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+          <label className="text-xs sm:text-sm font-medium text-[#efefef]">種別:</label>
           <select
             value={itemType}
             onChange={(e) => {
@@ -242,7 +235,7 @@ export function ItemManager() {
               setRankFilter('')
               setPage(1)
             }}
-            className="px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d]"
+            className="w-full sm:w-auto px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d] text-sm"
           >
             <option value="weapon">武器</option>
             <option value="armor">防具</option>
@@ -252,9 +245,9 @@ export function ItemManager() {
       </div>
 
       {/* 検索 */}
-      <div className="bg-[#303027]/50 backdrop-blur-sm rounded-xl p-6 border border-[#6d6d6d] space-y-4">
+      <div className="bg-[#303027]/50 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-[#6d6d6d] space-y-4">
         <div>
-          <label className="block text-sm font-medium text-[#efefef] mb-2">
+          <label className="block text-xs sm:text-sm font-medium text-[#efefef] mb-2">
             名前
           </label>
           <input
@@ -263,19 +256,19 @@ export function ItemManager() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            className="w-full px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] placeholder-[#6d6d6d] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d]"
+            className="w-full px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] placeholder-[#6d6d6d] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d] text-sm"
           />
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-[#efefef] mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-[#efefef] mb-2">
               {getCategoryLabel()}
             </label>
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d]"
+              className="w-full px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d] text-sm"
             >
               <option value="">すべて</option>
               {getCategories().map((cat) => (
@@ -286,13 +279,13 @@ export function ItemManager() {
 
           {itemType !== 'accessory' && (
             <div>
-              <label className="block text-sm font-medium text-[#efefef] mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-[#efefef] mb-2">
                 ランク
               </label>
               <select
                 value={rankFilter}
                 onChange={(e) => setRankFilter(e.target.value)}
-                className="w-full px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d]"
+                className="w-full px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d] text-sm"
               >
                 <option value="">すべて</option>
                 {Object.entries(RANK_LABELS).map(([value, label]) => (
@@ -303,13 +296,13 @@ export function ItemManager() {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-[#efefef] mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-[#efefef] mb-2">
               レギュレーション
             </label>
             <select
               value={regulationFilter}
               onChange={(e) => setRegulationFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d]"
+              className="w-full px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d] text-sm"
             >
               <option value="">すべて</option>
               {regulations.map((reg) => (
@@ -327,7 +320,7 @@ export function ItemManager() {
               setRegulationFilter('')
               setSearch('')
             }}
-            className="text-sm text-[#6d6d6d] hover:text-[#efefef] transition-colors"
+            className="text-xs sm:text-sm text-[#6d6d6d] hover:text-[#efefef] transition-colors"
           >
             フィルターをクリア
           </button>
@@ -338,42 +331,42 @@ export function ItemManager() {
         <div className="text-center py-12 text-[#6d6d6d]">読み込み中...</div>
       ) : (
         <>
-          <div className="bg-[#303027]/50 backdrop-blur-sm rounded-xl border border-[#6d6d6d] overflow-hidden">
-            <table className="w-full">
+          <div className="bg-[#303027]/50 backdrop-blur-sm rounded-xl border border-[#6d6d6d] overflow-x-auto">
+            <table className="w-full min-w-full text-sm sm:text-base">
               <thead className="bg-[#303027]/50 border-b border-[#6d6d6d]">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-[#efefef]">名前</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-[#efefef]">{getCategoryLabel()}</th>
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-[#efefef]">名前</th>
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-[#efefef] whitespace-nowrap">{getCategoryLabel()}</th>
                   {itemType !== 'accessory' && (
-                    <th className="px-4 py-3 text-left text-sm font-medium text-[#efefef]">ランク</th>
+                    <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-[#efefef]">ランク</th>
                   )}
-                  <th className="px-4 py-3 text-left text-sm font-medium text-[#efefef]">レギュレーション</th>
-                  <th className="px-4 py-3 text-right text-sm font-medium text-[#efefef]">操作</th>
+                  <th className="hidden sm:table-cell px-4 py-3 text-left text-xs sm:text-sm font-medium text-[#efefef]">レギュ</th>
+                  <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-[#efefef]">操作</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#6d6d6d]">
                 {items.map((item) => (
                   <tr key={item.id} className="hover:bg-[#6d6d6d]/20 transition-colors">
-                    <td className="px-4 py-3 text-[#efefef]">{item.name}</td>
-                    <td className="px-4 py-3 text-[#6d6d6d]">
+                    <td className="px-2 sm:px-4 py-3 text-[#efefef] text-xs sm:text-sm">{item.name}</td>
+                    <td className="px-2 sm:px-4 py-3 text-[#6d6d6d] text-xs sm:text-sm">
                       {itemType === 'accessory' ? item.usage : item.category}
                     </td>
                     {itemType !== 'accessory' && (
-                      <td className="px-4 py-3 text-[#6d6d6d]">{item.rank}</td>
+                      <td className="px-2 sm:px-4 py-3 text-[#6d6d6d] text-xs sm:text-sm">{item.rank}</td>
                     )}
-                    <td className="px-4 py-3 text-[#6d6d6d]">
+                    <td className="hidden sm:table-cell px-4 py-3 text-[#6d6d6d] text-xs sm:text-sm">
                       {regulations.find((r) => r.code === item.regulation)?.name || item.regulation}
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-2 sm:px-4 py-3 text-right">
                       <button
                         onClick={() => setEditingItem(item)}
-                        className="px-3 py-1 bg-[#6d6d6d] hover:bg-[#efefef] text-[#303027] rounded-lg transition-colors mr-2"
+                        className="px-2 sm:px-3 py-1 bg-[#6d6d6d] hover:bg-[#efefef] text-[#303027] rounded-lg transition-colors text-xs sm:text-sm mr-1 sm:mr-2 whitespace-nowrap"
                       >
                         編集
                       </button>
                       <button
                         onClick={() => handleDelete(item.id)}
-                        className="px-3 py-1 bg-[#a44949] hover:bg-[#b85656] text-white rounded-lg transition-colors"
+                        className="px-2 sm:px-3 py-1 bg-[#a44949] hover:bg-[#b85656] text-white rounded-lg transition-colors text-xs sm:text-sm whitespace-nowrap"
                       >
                         削除
                       </button>
@@ -388,21 +381,21 @@ export function ItemManager() {
           {/* TODO: ページ数・API対応後に有効化。下記はUI例。 */}
           {/*
           {totalPages > 1 && (
-            <div className="flex justify-center gap-2 mt-4">
+            <div className="flex flex-col sm:flex-row justify-center gap-2 items-center mt-4">
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#303027] text-[#efefef] hover:text-[#303027] rounded"
+                className="w-full sm:w-auto px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#303027] text-[#efefef] hover:text-[#303027] rounded text-sm"
               >
                 前へ
               </button>
-              <span className="px-4 py-2 text-[#6d6d6d]">
+              <span className="px-4 py-2 text-[#6d6d6d] text-sm">
                 {page} / {totalPages}
               </span>
               <button
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#303027] text-[#efefef] hover:text-[#303027] rounded"
+                className="w-full sm:w-auto px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#303027] text-[#efefef] hover:text-[#303027] rounded text-sm"
               >
                 次へ
               </button>
@@ -449,7 +442,7 @@ function ItemForm({
       price: 0,
       summary: '',
       page: '',
-      regulation: 'TYPE_I',
+      regulation: regulations[0]?.code || '',
     }
 
     if (itemType === 'weapon') {
@@ -692,7 +685,7 @@ function ItemForm({
             <div>
               <label className="block text-sm font-medium text-[#efefef] mb-2">レギュレーション</label>
               <select
-                value={formData.regulation || (regulations.length > 0 ? regulations[0].code : 'Ⅰ')}
+                value={formData.regulation || (regulations[0]?.code || '')}
                 onChange={(e) => setFormData({ ...formData, regulation: e.target.value })}
                 className="w-full px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded text-[#efefef]"
               >

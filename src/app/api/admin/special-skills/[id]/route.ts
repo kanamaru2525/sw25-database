@@ -11,6 +11,18 @@ export async function PUT(
     const id = params.id
     const data = await request.json()
 
+    let customFields = data.customFields
+    if (typeof data.customFields === 'string') {
+      try {
+        customFields = JSON.parse(data.customFields)
+      } catch (parseError) {
+        return NextResponse.json(
+          { error: 'customFieldsのJSONが不正です' },
+          { status: 400 }
+        )
+      }
+    }
+
     const skill = await prisma.specialSkill.update({
       where: { id },
       data: {
@@ -25,9 +37,9 @@ export async function PUT(
         rangeShape: data.rangeShape || null,
         summary: data.summary,
         page: data.page,
-        regulation: data.regulation || 'TYPE_I', // 空文字列の場合はデフォルト値を設定
+        regulation: data.regulation || '', // 空文字列の場合はデフォルト値を設定
         // カスタムフィールド（JSON形式）
-        customFields: data.customFields || null,
+        customFields: customFields || null,
       },
     })
 

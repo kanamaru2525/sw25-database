@@ -67,27 +67,6 @@ enum MagisphereSize {
   SMALL   // 小
 }
 
-enum RegulationType {
-  TYPE_I   @map("Ⅰ")
-  TYPE_II  @map("Ⅱ")
-  TYPE_III @map("Ⅲ")
-  DX
-  ET
-  ML
-  MA
-  BM
-  AL
-  RL
-  BR
-  BS
-  AB
-  BI
-  DD
-  US
-  TS
-  AZ
-}
-
 enum Rank {
   B
   A
@@ -120,33 +99,13 @@ enum ItemType {
   ACCESSORY
 }
 
-enum SkillCategory {
-  ENHANCER
-  BARD_SONG
-  BARD_FINALE
-  RIDER
-  ALCHEMIST
-  GEOMANCER
-  WARLEADER_KOUHAI
-  WARLEADER_JINRITSU
-  DARKHUNTER
-}
-
-enum FieldType {
-  BOOLEAN
-  TEXT
-  NUMBER
-  SELECT
-  TEXTAREA
-}
-
 // --- SW2.5 モデル ---
 
 model RegulationPreset {
   id          String           @id @default(cuid())
   name        String
   userId      String
-  regulations RegulationType[]
+  regulations String[]
   user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   createdAt   DateTime         @default(now())
@@ -171,7 +130,7 @@ model Spell {
   summary         String          @db.Text
   magisphere      MagisphereSize? // マギスフィア（魔動機術用）
   page            String
-  regulation      RegulationType
+  regulation      String
 }
 
 
@@ -184,63 +143,58 @@ model CombatFeat {
   risk          String?
   summary       String         @db.Text
   page          String
-  regulation    RegulationType
+  regulation    String
   vagrancy      Boolean        @default(false)
 }
 
 // カテゴリー設定管理
 model SkillCategoryConfig {
-  id            String             @id @default(cuid())
-  code          SkillCategory      @unique
-  name          String
-  order         Int
-  customFields  SkillFieldConfig[]
-  skills        SpecialSkill[]
-  
+  id     String             @id @default(uuid())
+  code   String             @unique
+  name   String
+  order  Int                @default(0)
+  fields SkillFieldConfig[]
+  skills SpecialSkill[]
+
   @@index([order])
 }
 
 // カテゴリー別カスタムフィールド設定
 model SkillFieldConfig {
-  id          String              @id @default(cuid())
+  id          String              @id @default(uuid())
   categoryId  String
-  fieldKey    String              // "hasSinging", "pet", "condition" など
-  fieldLabel  String              // "歌唱", "ペット", "条件" など
-  fieldType   FieldType           // BOOLEAN, TEXT, NUMBER, SELECT, TEXTAREA
-  placeholder String?             // 入力例
-  options     Json?               // selectの場合の選択肢 ["有", "無"]
-  order       Int                 // 表示順
-  required    Boolean             @default(false)
   category    SkillCategoryConfig @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  
+  fieldKey    String              // JSONの保存キー ("instr" 等)
+  fieldLabel  String              // UI上の表示ラベル ("演奏楽器" 等)
+  fieldType   String              // "text", "number", "boolean" 等
+  placeholder String?             // 入力ヒント
+  options     Json?               // selectの場合の選択肢 ["有", "無"]
+  order       Int                 @default(0)
+  required    Boolean             @default(false)
+
   @@unique([categoryId, fieldKey])
   @@index([categoryId, order])
 }
 
 // その他技能
 model SpecialSkill {
-  id            String              @id @default(cuid())
-  categoryCode  SkillCategory       // enumのまま（既存との互換性）
-  level         Int?                // レベル（オプショナルに変更）
-  name          String              // 名前 *
-  summary       String              @db.Text // 概要 *
-  page          String              // ページ *
-  regulation    RegulationType      // レギュレーション *
-  
-  // よく使う共通項目
-  duration      String?             // 持続時間
-  resistance    String?             // 抵抗
-  cost          String?             // コスト
-  attribute     String?             // 属性
-  target        String?             // 対象
-  rangeShape    String?             // 射程/形状
-  
-  // カテゴリー固有の動的フィールド（JSON形式）
-  customFields  Json?               // { "hasSinging": true, "condition": "なし", ... }
-  
-  // リレーション
-  category      SkillCategoryConfig @relation(fields: [categoryCode], references: [code])
-  
+  id           String   @id @default(uuid())
+  name         String
+  categoryCode String   // ENHANCER, BARD_SONG 等の識別コードを保存
+  level        Int?
+  regulation   String   // String型で管理画面の設定値と紐付け
+  summary      String
+  page         String
+  duration     String?
+  resistance   String?
+  cost         String?
+  attribute    String?
+  target       String?
+  rangeShape   String?
+  customFields Json?    // カテゴリ固有の値を { "key": "value" } 形式で保存
+
+  category SkillCategoryConfig @relation(fields: [categoryCode], references: [code])
+
   @@index([categoryCode])
   @@index([regulation])
 }
@@ -272,7 +226,7 @@ model Item {
   price         Int
   summary       String          @db.Text
   page          String
-  regulation    RegulationType
+  regulation    String
   
   @@index([itemType])
   @@index([regulation])
@@ -289,7 +243,7 @@ model Deity {
 
 // --- レギュレーションの管理 ---
 model RegulationConfig {
-  id          String   @id @default(cuid())
+  id          String   @id @default(uuid())
   code        String   @unique
   name        String
   order       Int      @default(0)

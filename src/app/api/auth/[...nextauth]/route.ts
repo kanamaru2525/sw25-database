@@ -110,34 +110,32 @@ export const authOptions: NextAuthOptions = {
         return false
       }
       
-      // ユーザー情報をJWTに保存（データベース不使用）
-      // データベース接続が回復したら、以下のコードを再度有効化してください
-      /*
+      // ユーザー情報をデータベースに保存
+      let dbUser: any
       try {
         console.log('[Auth] Upserting user to database...')
-        await prisma.user.upsert({
-          where: { id: user.id },
+        dbUser = await prisma.user.upsert({
+          where: { email: user.email || `discord_${account.providerAccountId}` },
           update: {
             isAdmin: isGM,
             discordId: account.providerAccountId,
           },
           create: {
-            id: user.id,
-            email: user.email,
+            email: user.email || `discord_${account.providerAccountId}`,
             name: user.name,
             image: user.image,
             isAdmin: isGM,
             discordId: account.providerAccountId,
           },
         })
-        console.log('[Auth] User upsert successful')
+        console.log('[Auth] User upsert successful, userId:', dbUser.id)
       } catch (error) {
         console.error('[Auth] Error upserting user:', error)
         // エラーが発生してもサインインは続行
       }
-      */
       
       // JWT戦略のため、ユーザー情報をuserオブジェクトに追加
+      user.id = dbUser?.id || user.id
       user.isAdmin = isGM
       user.discordId = account.providerAccountId
       
@@ -147,6 +145,7 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, account }) {
       // 初回サインイン時はuserオブジェクトが利用可能
       if (user) {
+        token.sub = user.id
         token.isAdmin = user.isAdmin
         token.discordId = user.discordId || account?.providerAccountId
         token.email = user.email
@@ -156,6 +155,10 @@ export const authOptions: NextAuthOptions = {
       return token
     },
     async session({ session, token }) {
+      console.log('[Auth] session callback - token:', {
+        sub: token.sub,
+        email: token.email,
+      })
       if (session.user) {
         session.user.id = token.sub!
         session.user.isAdmin = (token.isAdmin as boolean) || false
@@ -163,6 +166,10 @@ export const authOptions: NextAuthOptions = {
         session.user.name = token.name as string
         session.user.image = token.picture as string
       }
+      console.log('[Auth] session callback - result:', {
+        userId: session.user?.id,
+        email: session.user?.email,
+      })
       return session
     },
   },

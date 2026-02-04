@@ -30,14 +30,12 @@ export function CSVImport({ endpoint, title, description, sampleHeaders, fieldNo
     setResult(null)
 
     try {
-      const text = await file.text()
+      const formData = new FormData()
+      formData.append('file', file)
       
       const response = await fetch(endpoint, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ csv: text }),
+        body: formData,
       })
 
       const data = await response.json()

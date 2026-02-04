@@ -86,6 +86,7 @@ export default function RegulationPresetManager({
     setIsCreating(false)
     setEditingPreset(null)
     setFormData({ name: '', regulations: [] })
+    fetchPresets()
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -97,19 +98,17 @@ export default function RegulationPresetManager({
         : '/api/user/regulation-presets'
       const method = editingPreset ? 'PUT' : 'POST'
 
-      // 基本レギュレーション（Ⅰ、Ⅱ、Ⅲ、DX）を自動追加
-      const baseRegulations = regulations
-        .filter(r => ['Ⅰ', 'Ⅱ', 'Ⅲ', 'DX'].includes(r.code))
-        .map(r => r.code)
-      const allRegulations = [...new Set([...baseRegulations, ...formData.regulations])]
-
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, regulations: allRegulations }),
+        body: JSON.stringify(formData),
       })
 
-      if (!response.ok) throw new Error('Failed to save')
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        const errorMessage = errorData.error || `HTTP ${response.status}: Failed to save`
+        throw new Error(errorMessage)
+      }
 
       showToast(
         editingPreset ? 'プリセットを更新しました' : 'プリセットを作成しました',
@@ -251,15 +250,10 @@ export default function RegulationPresetManager({
 
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">
-                    追加レギュレーション選択
+                    レギュレーション選択
                   </label>
-                  <p className="text-xs text-slate-400 mb-3">
-                    ※ Ⅰ, Ⅱ, Ⅲ, DXは基本レギュレーションとして自動的に含まれます
-                  </p>
                   <div className="grid grid-cols-4 gap-2">
-                    {regulations
-                      .filter(r => !['Ⅰ', 'Ⅱ', 'Ⅲ', 'DX'].includes(r.code))
-                      .map((regulation) => (
+                    {regulations.map((regulation) => (
                       <button
                         key={regulation.code}
                         type="button"

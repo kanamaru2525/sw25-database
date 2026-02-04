@@ -193,7 +193,7 @@ export default function CombatFeatManager() {
       {/* Toast通知 */}
       {toast && (
         <div
-          className={`fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg text-[#efefef] animate-slide-up ${
+          className={`fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg text-[#efefef] animate-slide-up z-50 ${
             toast.type === 'success' ? 'bg-[#6d6d6d]' : 'bg-[#303027] border border-[#6d6d6d]'
           }`}
         >
@@ -202,23 +202,23 @@ export default function CombatFeatManager() {
       )}
 
       {/* ヘッダー */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
         <Link
           href="/admin"
-          className="text-[#6d6d6d] hover:text-[#efefef]"
+          className="text-[#6d6d6d] hover:text-[#efefef] text-sm sm:text-base"
         >
           ← 管理者画面に戻る
         </Link>
-        <div className="flex gap-4">
+        <div className="flex gap-2 sm:gap-4 flex-wrap w-full sm:w-auto">
           <Link
             href="/admin/import/combat-feats"
-            className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] text-[#efefef] hover:text-[#303027] rounded-lg transition-colors"
+            className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] text-[#efefef] hover:text-[#303027] rounded-lg transition-colors text-center text-sm sm:text-base"
           >
             CSVインポート
           </Link>
           <button
             onClick={() => openModal()}
-            className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] text-[#efefef] hover:text-[#303027] rounded-lg transition-colors"
+            className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] text-[#efefef] hover:text-[#303027] rounded-lg transition-colors text-sm sm:text-base"
           >
             新規追加
           </button>
@@ -227,15 +227,15 @@ export default function CombatFeatManager() {
 
       {/* 検索 */}
       <div className="bg-[#303027]/50 backdrop-blur-sm rounded-xl p-4 border border-[#6d6d6d]">
-        <div className="flex gap-4 items-center">
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
           <input
             type="text"
             placeholder="名前で検索..."
             value={search}
             onChange={(e) => handleSearch(e.target.value)}
-            className="flex-1 px-4 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded-lg text-[#efefef] placeholder-[#6d6d6d] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d]"
+            className="w-full sm:flex-1 px-4 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded-lg text-[#efefef] placeholder-[#6d6d6d] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d] text-sm"
           />
-          <label className="flex items-center gap-2 text-[#efefef] cursor-pointer">
+          <label className="flex items-center gap-2 text-[#efefef] cursor-pointer whitespace-nowrap text-sm">
             <input
               type="checkbox"
               checked={includeVagrancy}
@@ -252,40 +252,40 @@ export default function CombatFeatManager() {
         <div className="text-center py-12 text-[#6d6d6d]">読み込み中...</div>
       ) : (
         <>
-          <div className="bg-[#303027]/50 backdrop-blur-sm rounded-xl border border-[#6d6d6d] overflow-hidden">
-            <table className="w-full">
+          <div className="bg-[#303027]/50 backdrop-blur-sm rounded-xl border border-[#6d6d6d] overflow-x-auto">
+            <table className="w-full min-w-full text-sm sm:text-base">
               <thead className="bg-[#6d6d6d]/50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-[#efefef]">名前</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-[#efefef]">タイプ</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-[#efefef]">前提</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-[#efefef]">対象</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-[#efefef]">リスク</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-[#efefef]">レギュレーション</th>
-                  <th className="px-4 py-3 text-right text-sm font-medium text-[#efefef]">操作</th>
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-[#efefef]">名前</th>
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-[#efefef]">タイプ</th>
+                  <th className="hidden sm:table-cell px-4 py-3 text-left text-xs sm:text-sm font-medium text-[#efefef]">前提</th>
+                  <th className="hidden md:table-cell px-4 py-3 text-left text-xs sm:text-sm font-medium text-[#efefef]">対象</th>
+                  <th className="hidden lg:table-cell px-4 py-3 text-left text-xs sm:text-sm font-medium text-[#efefef]">リスク</th>
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-[#efefef]">レギュ</th>
+                  <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-[#efefef]">操作</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#6d6d6d]">
                 {feats?.map((feat) => (
                   <tr key={feat.id} className="hover:bg-[#6d6d6d]/30">
-                    <td className="px-4 py-3 text-[#efefef]">{feat.name}</td>
-                    <td className="px-4 py-3 text-[#6d6d6d]">
+                    <td className="px-2 sm:px-4 py-3 text-[#efefef] text-xs sm:text-sm">{feat.name}</td>
+                    <td className="px-2 sm:px-4 py-3 text-[#6d6d6d] text-xs sm:text-sm">
                       {FEAT_TYPE_LABELS[feat.type]}
                     </td>
-                    <td className="px-4 py-3 text-[#6d6d6d]">{feat.requirement || '-'}</td>
-                    <td className="px-4 py-3 text-[#6d6d6d]">{feat.target || '-'}</td>
-                    <td className="px-4 py-3 text-[#6d6d6d]">{feat.risk || '-'}</td>
-                    <td className="px-4 py-3 text-[#6d6d6d]">{feat.regulation}</td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="hidden sm:table-cell px-4 py-3 text-[#6d6d6d] text-xs sm:text-sm">{feat.requirement || '-'}</td>
+                    <td className="hidden md:table-cell px-4 py-3 text-[#6d6d6d] text-xs sm:text-sm">{feat.target || '-'}</td>
+                    <td className="hidden lg:table-cell px-4 py-3 text-[#6d6d6d] text-xs sm:text-sm">{feat.risk || '-'}</td>
+                    <td className="px-2 sm:px-4 py-3 text-[#6d6d6d] text-xs sm:text-sm">{feat.regulation}</td>
+                    <td className="px-2 sm:px-4 py-3 text-right">
                       <button
                         onClick={() => openModal(feat)}
-                        className="px-3 py-1 bg-[#6d6d6d] hover:bg-[#efefef] text-[#efefef] hover:text-[#303027] rounded-lg transition-colors mr-2"
+                        className="px-2 sm:px-3 py-1 bg-[#6d6d6d] hover:bg-[#efefef] text-[#efefef] hover:text-[#303027] rounded-lg transition-colors text-xs sm:text-sm mr-1 sm:mr-2 whitespace-nowrap"
                       >
                         編集
                       </button>
                       <button
                         onClick={() => handleDelete(feat.id)}
-                        className="px-3 py-1 bg-[#a44949] hover:bg-[#b85656] text-white rounded-lg transition-colors"
+                        className="px-2 sm:px-3 py-1 bg-[#a44949] hover:bg-[#b85656] text-white rounded-lg transition-colors text-xs sm:text-sm whitespace-nowrap"
                       >
                         削除
                       </button>
@@ -326,14 +326,14 @@ export default function CombatFeatManager() {
       {/* モーダル */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-[#303027] rounded-xl p-6 max-w-2xl w-full my-8 border border-[#6d6d6d]">
-            <h2 className="text-2xl font-bold text-[#efefef] mb-6">
+          <div className="bg-[#303027] rounded-xl p-4 sm:p-6 max-w-2xl w-full my-8 border border-[#6d6d6d]">
+            <h2 className="text-xl sm:text-2xl font-bold text-[#efefef] mb-6">
               {editingFeat ? '特技編集' : '特技作成'}
             </h2>
             <form onSubmit={handleSubmit}>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-[#efefef] mb-2">
+                  <label className="block text-xs sm:text-sm font-medium text-[#efefef] mb-2">
                     名前 *
                   </label>
                   <input
@@ -342,13 +342,13 @@ export default function CombatFeatManager() {
                     onChange={(e) =>
                       setFormData({ ...formData, name: e.target.value })
                     }
-                    className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
+                    className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef] text-sm"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-[#efefef] mb-2">
+                  <label className="block text-xs sm:text-sm font-medium text-[#efefef] mb-2">
                     タイプ *
                   </label>
                   <select
@@ -359,7 +359,7 @@ export default function CombatFeatManager() {
                         type: e.target.value as FeatType,
                       })
                     }
-                    className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
+                    className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef] text-sm"
                     required
                   >
                     {FEAT_TYPES.map((type) => (
@@ -371,7 +371,7 @@ export default function CombatFeatManager() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-[#efefef] mb-2">
+                  <label className="block text-xs sm:text-sm font-medium text-[#efefef] mb-2">
                     前提
                   </label>
                   <input
@@ -383,12 +383,12 @@ export default function CombatFeatManager() {
                         requirement: e.target.value,
                       })
                     }
-                    className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
+                    className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef] text-sm"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-[#efefef] mb-2">
+                  <label className="block text-xs sm:text-sm font-medium text-[#efefef] mb-2">
                     対象
                   </label>
                   <input
@@ -397,12 +397,12 @@ export default function CombatFeatManager() {
                     onChange={(e) =>
                       setFormData({ ...formData, target: e.target.value })
                     }
-                    className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
+                    className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef] text-sm"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-[#efefef] mb-2">
+                  <label className="block text-xs sm:text-sm font-medium text-[#efefef] mb-2">
                     リスク
                   </label>
                   <input
@@ -411,12 +411,12 @@ export default function CombatFeatManager() {
                     onChange={(e) =>
                       setFormData({ ...formData, risk: e.target.value })
                     }
-                    className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
+                    className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef] text-sm"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-[#efefef] mb-2">
+                  <label className="block text-xs sm:text-sm font-medium text-[#efefef] mb-2">
                     ページ *
                   </label>
                   <input
@@ -425,13 +425,13 @@ export default function CombatFeatManager() {
                     onChange={(e) =>
                       setFormData({ ...formData, page: e.target.value })
                     }
-                    className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
+                    className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef] text-sm"
                     required
                   />
                 </div>
 
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-[#efefef] mb-2">
+                <div className="col-span-1 sm:col-span-2">
+                  <label className="block text-xs sm:text-sm font-medium text-[#efefef] mb-2">
                     概要 *
                   </label>
                   <textarea
@@ -439,14 +439,14 @@ export default function CombatFeatManager() {
                     onChange={(e) =>
                       setFormData({ ...formData, summary: e.target.value })
                     }
-                    className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
+                    className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef] text-sm"
                     rows={3}
                     required
                   />
                 </div>
 
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-[#efefef] mb-2">
+                <div className="col-span-1 sm:col-span-2">
+                  <label className="block text-xs sm:text-sm font-medium text-[#efefef] mb-2">
                     レギュレーション *
                   </label>
                   <select
@@ -457,7 +457,7 @@ export default function CombatFeatManager() {
                         regulation: e.target.value,
                       })
                     }
-                    className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
+                    className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef] text-sm"
                     required
                   >
                     {regulations.map((reg) => (
@@ -468,8 +468,8 @@ export default function CombatFeatManager() {
                   </select>
                 </div>
 
-                <div className="col-span-2">
-                  <label className="flex items-center gap-2 text-[#efefef] cursor-pointer">
+                <div className="col-span-1 sm:col-span-2">
+                  <label className="flex items-center gap-2 text-[#efefef] cursor-pointer text-sm">
                     <input
                       type="checkbox"
                       checked={formData.vagrancy || false}
@@ -486,18 +486,18 @@ export default function CombatFeatManager() {
                 </div>
               </div>
 
-              <div className="mt-6 flex justify-end gap-2">
+              <div className="mt-6 flex flex-col-reverse sm:flex-row justify-end gap-2">
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="px-4 py-2 bg-[#303027] hover:bg-[#6d6d6d] text-[#efefef] border border-[#6d6d6d] rounded-lg transition-colors"
+                  className="px-4 py-2 bg-[#303027] hover:bg-[#6d6d6d] text-[#efefef] border border-[#6d6d6d] rounded-lg transition-colors text-sm"
                   disabled={isSaving}
                 >
                   キャンセル
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] text-[#efefef] hover:text-[#303027] rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+                  className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] text-[#efefef] hover:text-[#303027] rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
                   disabled={isSaving}
                 >
                   {isSaving && (

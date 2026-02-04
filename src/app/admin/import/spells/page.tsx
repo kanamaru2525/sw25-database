@@ -55,7 +55,7 @@ export default async function SpellsImportPage() {
             { field: 'deity', note: '神聖魔法の神の名前。空欄で全神共通' },
             { field: 'biblioRank', note: '魔導書ランク。数値または空欄' },
             { field: 'magisphere', note: 'LARGE, MEDIUM, SMALL または空欄' },
-            { field: 'regulation', note: 'Ⅰ, Ⅱ, Ⅲ, DX, ET, ML, MA, BM, AL, RL, BR, BS, AB, BI, DD, US, TS, AZ' }
+             { field: 'regulation', note: '管理画面で登録したレギュレーションのコードまたは名称' }
           ]}
         />
       </main>

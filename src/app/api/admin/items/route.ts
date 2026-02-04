@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
         price: data.price,
         summary: data.summary,
         page: data.page,
-        regulation: data.regulation || 'TYPE_I',
+        regulation: data.regulation || '',
       },
     })
 

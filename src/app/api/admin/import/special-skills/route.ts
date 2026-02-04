@@ -4,38 +4,6 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { prisma } from '@/lib/prisma'
 import Papa from 'papaparse'
 
-const SKILL_CATEGORY_MAP: { [key: string]: string } = {
-  '練技': 'ENHANCER',
-  '呪歌': 'BARD_SONG',
-  '終律': 'BARD_FINALE',
-  '騎芸': 'RIDER',
-  '賦術': 'ALCHEMIST',
-  '相域': 'GEOMANCER',
-  '鼓吠': 'WARLEADER_KOUHAI',
-  '陣率': 'WARLEADER_JINRITSU',
-  '操気': 'DARKHUNTER',
-}
-
-const REGULATION_MAP: { [key: string]: string } = {
-  'Ⅰ': 'TYPE_I',
-  'Ⅱ': 'TYPE_II',
-  'Ⅲ': 'TYPE_III',
-  'DX': 'DX',
-  'ET': 'ET',
-  'ML': 'ML',
-  'MA': 'MA',
-  'BM': 'BM',
-  'AL': 'AL',
-  'RL': 'RL',
-  'BR': 'BR',
-  'BS': 'BS',
-  'AB': 'AB',
-  'BI': 'BI',
-  'DD': 'DD',
-  'US': 'US',
-  'TS': 'TS',
-}
-
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions)
   
@@ -70,17 +38,30 @@ export async function POST(request: NextRequest) {
       const row = rows[i]
       
       try {
-        if (!row.name || !row.category || !row.level) {
+        if (!row.name || (!row.category && !row.categoryCode) || !row.level) {
           errors.push(`行 ${i + 2}: 必須フィールドが不足しています`)
           continue
         }
 
-        const category = SKILL_CATEGORY_MAP[row.category] || row.category
-        const regulation = REGULATION_MAP[row.regulation] || row.regulation
+        const category = row.categoryCode || row.category
+        const regulation = row.regulation || ''
+
+        let customFields: Record<string, any> | null = null
+        const customFieldsRaw = row.customFields || row.custom_fields
+        if (customFieldsRaw) {
+          try {
+            customFields = typeof customFieldsRaw === 'string'
+              ? JSON.parse(customFieldsRaw)
+              : customFieldsRaw
+          } catch (parseError) {
+            errors.push(`行 ${i + 2}: customFieldsのJSONが不正です`)
+            continue
+          }
+        }
 
         await prisma.specialSkill.create({
           data: {
-            category: category,
+            categoryCode: category,
             level: parseInt(row.level),
             name: row.name,
             duration: row.duration || null,
@@ -92,6 +73,7 @@ export async function POST(request: NextRequest) {
             summary: row.summary || '',
             page: row.page || '',
             regulation: regulation,
+            customFields: customFields,
           },
         })
 

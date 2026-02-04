@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
         summary: data.summary,
         magisphere: data.magisphere || null,
         page: data.page,
-        regulation: data.regulation || 'TYPE_I',
+        regulation: data.regulation || '',
       },
     })
 

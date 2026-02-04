@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
 type SpellType = 'SHINGO' | 'SOREI' | 'SHINCHI' | 'SHINSEI' | 'MADOKI' | 'YOSEI' | 'SHINRA' | 'SHOI' | 'NARAKU' | 'HIOU'
-type RegulationType = 'TYPE_I' | 'TYPE_II' | 'TYPE_III' | 'DX' | 'ET' | 'ML' | 'MA' | 'BM' | 'AL' | 'RL' | 'BR' | 'BS' | 'AB' | 'BI' | 'DD' | 'US' | 'TS'
 
 interface Spell {
   id: string
@@ -40,26 +39,6 @@ const SPELL_TYPE_LABELS: Record<SpellType, string> = {
   HIOU: '秘奥魔法',
 }
 
-const REGULATION_LABELS: Record<RegulationType, string> = {
-  TYPE_I: 'Ⅰ',
-  TYPE_II: 'Ⅱ',
-  TYPE_III: 'Ⅲ',
-  DX: 'DX',
-  ET: 'ET',
-  ML: 'ML',
-  MA: 'MA',
-  BM: 'BM',
-  AL: 'AL',
-  RL: 'RL',
-  BR: 'BR',
-  BS: 'BS',
-  AB: 'AB',
-  BI: 'BI',
-  DD: 'DD',
-  US: 'US',
-  TS: 'TS',
-}
-
 // 妖精魔法の属性（魔法のattributeとは異なる妖精魔法専用のカテゴリー）
 type FairyAttribute = '土' | '水・氷' | '炎' | '風' | '光' | '闇' | '基本' | '特殊'
 const FAIRY_ATTRIBUTES: FairyAttribute[] = ['土', '水・氷', '炎', '風', '光', '闇', '基本', '特殊']
@@ -78,6 +57,10 @@ export function SpellManager() {
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+
+  const getRegulationLabel = (code: string) => {
+    return regulations.find((r) => r.code === code)?.name || code
+  }
 
   // 神とレギュレーションを取得
   useEffect(() => {
@@ -182,23 +165,23 @@ export function SpellManager() {
   return (
     <div className="space-y-6">
       {/* ヘッダー */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
         <Link
           href="/admin"
-          className="text-[#6d6d6d] hover:text-[#efefef]"
+          className="text-[#6d6d6d] hover:text-[#efefef] text-sm sm:text-base"
         >
           ← 管理者画面に戻る
         </Link>
-        <div className="flex gap-4">
+        <div className="flex gap-2 sm:gap-4 flex-wrap w-full sm:w-auto">
           <Link
             href="/admin/import/spells"
-            className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] text-[#efefef] hover:text-[#303027] rounded-lg transition-colors"
+            className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] text-[#efefef] hover:text-[#303027] rounded-lg transition-colors text-center text-sm sm:text-base"
           >
             CSVインポート
           </Link>
           <button
             onClick={() => setIsCreating(true)}
-            className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] text-[#efefef] hover:text-[#303027] rounded-lg transition-colors"
+            className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] text-[#efefef] hover:text-[#303027] rounded-lg transition-colors text-sm sm:text-base"
           >
             新規追加
           </button>
@@ -206,9 +189,9 @@ export function SpellManager() {
       </div>
 
       {/* 検索とフィルター */}
-      <div className="bg-[#303027]/50 backdrop-blur-sm rounded-xl p-6 border border-[#6d6d6d] space-y-4">
+      <div className="bg-[#303027]/50 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-[#6d6d6d] space-y-4">
         <div>
-          <label className="block text-sm font-medium text-[#efefef] mb-2">
+          <label className="block text-xs sm:text-sm font-medium text-[#efefef] mb-2">
             名前
           </label>
           <input
@@ -216,19 +199,19 @@ export function SpellManager() {
             placeholder="魔法名で検索"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] placeholder-[#6d6d6d] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d]"
+            className="w-full px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] placeholder-[#6d6d6d] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d] text-sm"
           />
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-[#efefef] mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-[#efefef] mb-2">
               魔法種別
             </label>
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d]"
+              className="w-full px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d] text-sm"
             >
               <option value="">すべて</option>
               {Object.entries(SPELL_TYPE_LABELS).map(([value, label]) => (
@@ -238,13 +221,13 @@ export function SpellManager() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#efefef] mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-[#efefef] mb-2">
               レベル
             </label>
             <select
               value={levelFilter}
               onChange={(e) => setLevelFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d]"
+              className="w-full px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d] text-sm"
             >
               <option value="">すべて</option>
               {Array.from({ length: 16 }, (_, i) => i).map((level) => (
@@ -254,13 +237,13 @@ export function SpellManager() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#efefef] mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-[#efefef] mb-2">
               レギュレーション
             </label>
             <select
               value={regulationFilter}
               onChange={(e) => setRegulationFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d]"
+              className="w-full px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d] text-sm"
             >
               <option value="">すべて</option>
               {regulations.map((reg) => (
@@ -279,7 +262,7 @@ export function SpellManager() {
               setSearch('')
               setPage(1)
             }}
-            className="text-sm text-[#6d6d6d] hover:text-[#efefef]"
+            className="text-xs sm:text-sm text-[#6d6d6d] hover:text-[#efefef]"
           >
             フィルターをクリア
           </button>
@@ -291,38 +274,38 @@ export function SpellManager() {
         <div className="text-center py-12 text-[#6d6d6d]">読み込み中...</div>
       ) : (
         <>
-          <div className="bg-[#303027]/50 backdrop-blur-sm rounded-xl border border-[#6d6d6d] overflow-hidden">
-            <table className="w-full">
+          <div className="bg-[#303027]/50 backdrop-blur-sm rounded-xl border border-[#6d6d6d] overflow-x-auto">
+            <table className="w-full min-w-full text-sm sm:text-base">
               <thead className="bg-[#6d6d6d]/50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-[#efefef]">名前</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-[#efefef]">種別</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-[#efefef]">Lv</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-[#efefef]">レギュレーション</th>
-                  <th className="px-4 py-3 text-right text-sm font-medium text-[#efefef]">操作</th>
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-[#efefef]">名前</th>
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-[#efefef]">種別</th>
+                  <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-[#efefef]">Lv</th>
+                  <th className="hidden sm:table-cell px-4 py-3 text-left text-xs sm:text-sm font-medium text-[#efefef]">レギュ</th>
+                  <th className="px-2 sm:px-4 py-3 text-right text-xs sm:text-sm font-medium text-[#efefef]">操作</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#6d6d6d]">
                 {spells.map((spell) => (
                   <tr key={spell.id} className="hover:bg-[#6d6d6d]/30">
-                    <td className="px-4 py-3 text-[#efefef]">{spell.name}</td>
-                    <td className="px-4 py-3 text-[#6d6d6d]">
+                    <td className="px-2 sm:px-4 py-3 text-[#efefef] text-xs sm:text-sm">{spell.name}</td>
+                    <td className="px-2 sm:px-4 py-3 text-[#6d6d6d] text-xs sm:text-sm">
                       {SPELL_TYPE_LABELS[spell.type as SpellType] || spell.type}
                     </td>
-                    <td className="px-4 py-3 text-[#6d6d6d]">{spell.level}</td>
-                    <td className="px-4 py-3 text-[#6d6d6d]">
-                      {REGULATION_LABELS[spell.regulation as RegulationType] || spell.regulation}
+                    <td className="px-2 sm:px-4 py-3 text-[#6d6d6d] text-xs sm:text-sm">{spell.level}</td>
+                    <td className="hidden sm:table-cell px-4 py-3 text-[#6d6d6d] text-xs sm:text-sm">
+                      {getRegulationLabel(spell.regulation)}
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-2 sm:px-4 py-3 text-right">
                       <button
                         onClick={() => setEditingSpell(spell)}
-                        className="px-3 py-1 bg-[#6d6d6d] hover:bg-[#efefef] text-[#efefef] hover:text-[#303027] text-sm rounded mr-2"
+                        className="px-2 sm:px-3 py-1 bg-[#6d6d6d] hover:bg-[#efefef] text-[#efefef] hover:text-[#303027] text-xs sm:text-sm rounded mr-1 sm:mr-2 whitespace-nowrap"
                       >
                         編集
                       </button>
                       <button
                         onClick={() => handleDelete(spell.id)}
-                        className="px-3 py-1 bg-[#a44949] hover:bg-[#b85656] text-white text-sm rounded"
+                        className="px-2 sm:px-3 py-1 bg-[#a44949] hover:bg-[#b85656] text-white text-xs sm:text-sm rounded whitespace-nowrap"
                       >
                         削除
                       </button>
@@ -335,21 +318,21 @@ export function SpellManager() {
 
           {/* ページネーション */}
           {totalPages > 1 && (
-            <div className="flex justify-center gap-2">
+            <div className="flex flex-col sm:flex-row justify-center gap-2 items-center">
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#303027] text-[#efefef] hover:text-[#303027] rounded"
+                className="w-full sm:w-auto px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#303027] text-[#efefef] hover:text-[#303027] rounded text-sm"
               >
                 前へ
               </button>
-              <span className="px-4 py-2 text-[#6d6d6d]">
+              <span className="px-4 py-2 text-[#6d6d6d] text-sm">
                 {page} / {totalPages}
               </span>
               <button
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#303027] text-[#efefef] hover:text-[#303027] rounded"
+                className="w-full sm:w-auto px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#303027] text-[#efefef] hover:text-[#303027] rounded text-sm"
               >
                 次へ
               </button>
@@ -421,7 +404,7 @@ function SpellForm({
       summary: '',
       magisphere: null,
       page: '',
-      regulation: regulations.length > 0 ? regulations[0].code : 'Ⅰ',
+      regulation: regulations[0]?.code || '',
     }
   )
   const [isSaving, setIsSaving] = useState(false)
@@ -437,29 +420,29 @@ function SpellForm({
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-[#303027] rounded-xl p-6 max-w-2xl w-full my-8 border border-[#6d6d6d]">
-        <h2 className="text-2xl font-bold text-[#efefef] mb-6">
+      <div className="bg-[#303027] rounded-xl p-4 sm:p-6 max-w-2xl w-full my-8 border border-[#6d6d6d]">
+        <h2 className="text-xl sm:text-2xl font-bold text-[#efefef] mb-6">
           {spell ? '魔法編集' : '魔法追加'}
         </h2>
 
         <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-[#efefef] mb-2">名前</label>
+              <label className="block text-xs sm:text-sm font-medium text-[#efefef] mb-2">名前</label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
+                className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef] text-sm"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#efefef] mb-2">種別</label>
+              <label className="block text-xs sm:text-sm font-medium text-[#efefef] mb-2">種別</label>
               <select
                 value={formData.type}
                 onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
+                className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef] text-sm"
               >
                 {Object.entries(SPELL_TYPE_LABELS).map(([value, label]) => (
                   <option key={value} value={value}>{label}</option>
@@ -468,21 +451,21 @@ function SpellForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#efefef] mb-2">レベル</label>
+              <label className="block text-xs sm:text-sm font-medium text-[#efefef] mb-2">レベル</label>
               <input
                 type="number"
                 value={formData.level}
                 onChange={(e) => setFormData({ ...formData, level: parseInt(e.target.value) })}
-                className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
+                className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef] text-sm"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#efefef] mb-2">レギュレーション</label>
+              <label className="block text-xs sm:text-sm font-medium text-[#efefef] mb-2">レギュレーション</label>
               <select
                 value={formData.regulation}
                 onChange={(e) => setFormData({ ...formData, regulation: e.target.value })}
-                className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
+                className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef] text-sm"
               >
                 {regulations.length === 0 ? (
                   <option value="">読み込み中...</option>
@@ -495,81 +478,81 @@ function SpellForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#efefef] mb-2">射程</label>
+              <label className="block text-xs sm:text-sm font-medium text-[#efefef] mb-2">射程</label>
               <input
                 type="text"
                 value={formData.range}
                 onChange={(e) => setFormData({ ...formData, range: e.target.value })}
-                className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
+                className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef] text-sm"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#efefef] mb-2">形状</label>
+              <label className="block text-xs sm:text-sm font-medium text-[#efefef] mb-2">形状</label>
               <input
                 type="text"
                 value={formData.shape}
                 onChange={(e) => setFormData({ ...formData, shape: e.target.value })}
-                className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
+                className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef] text-sm"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#efefef] mb-2">持続時間</label>
+              <label className="block text-xs sm:text-sm font-medium text-[#efefef] mb-2">持続時間</label>
               <input
                 type="text"
                 value={formData.duration}
                 onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-                className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
+                className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef] text-sm"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#efefef] mb-2">消費</label>
+              <label className="block text-xs sm:text-sm font-medium text-[#efefef] mb-2">消費</label>
               <input
                 type="text"
                 value={formData.cost}
                 onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
-                className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
+                className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef] text-sm"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#efefef] mb-2">対象</label>
+              <label className="block text-xs sm:text-sm font-medium text-[#efefef] mb-2">対象</label>
               <input
                 type="text"
                 value={formData.target}
                 onChange={(e) => setFormData({ ...formData, target: e.target.value })}
-                className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
+                className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef] text-sm"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#efefef] mb-2">抵抗</label>
+              <label className="block text-xs sm:text-sm font-medium text-[#efefef] mb-2">抵抗</label>
               <input
                 type="text"
                 value={formData.resistance}
                 onChange={(e) => setFormData({ ...formData, resistance: e.target.value })}
-                className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
+                className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef] text-sm"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#efefef] mb-2">ページ</label>
+              <label className="block text-xs sm:text-sm font-medium text-[#efefef] mb-2">ページ</label>
               <input
                 type="text"
                 value={formData.page}
                 onChange={(e) => setFormData({ ...formData, page: e.target.value })}
-                className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
+                className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef] text-sm"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#efefef] mb-2">マギスフィア</label>
+              <label className="block text-xs sm:text-sm font-medium text-[#efefef] mb-2">マギスフィア</label>
               <select
                 value={formData.magisphere || ''}
                 onChange={(e) => setFormData({ ...formData, magisphere: e.target.value || null })}
-                className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
+                className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef] text-sm"
               >
                 <option value="">不要</option>
                 <option value="SMALL">小</option>
@@ -582,7 +565,7 @@ function SpellForm({
           {/* 妖精魔法の属性選択 */}
           {formData.type === 'YOSEI' && (
             <div className="pt-4 border-t border-[#6d6d6d]">
-              <label className="block text-sm font-medium text-[#efefef] mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-[#efefef] mb-2">
                 妖精魔法の属性
               </label>
               <select
@@ -594,7 +577,7 @@ function SpellForm({
                     fairyAttributes: value ? [value] : [] 
                   })
                 }}
-                className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
+                className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef] text-sm"
               >
                 <option value="">属性を選択</option>
                 {FAIRY_ATTRIBUTES.map((attr) => (
@@ -612,7 +595,7 @@ function SpellForm({
           {/* 神聖魔法の神選択 */}
           {formData.type === 'SHINSEI' && (
             <div className="pt-4 border-t border-[#6d6d6d]">
-              <label className="block text-sm font-medium text-[#efefef] mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-[#efefef] mb-2">
                 信仰する神
               </label>
               <select
@@ -624,7 +607,7 @@ function SpellForm({
                     deity: value || null
                   })
                 }}
-                className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
+                className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef] text-sm"
               >
                 <option value="">神を選択</option>
                 {deities.map((deity) => (
@@ -637,28 +620,28 @@ function SpellForm({
           )}
 
           <div>
-            <label className="block text-sm font-medium text-[#efefef] mb-2">概要</label>
+            <label className="block text-xs sm:text-sm font-medium text-[#efefef] mb-2">概要</label>
             <textarea
               value={formData.summary}
               onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
               rows={4}
-              className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
+              className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef] text-sm"
             />
           </div>
         </div>
 
-        <div className="flex justify-end gap-4 mt-6">
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-4 mt-6">
           <button
             onClick={onCancel}
             disabled={isSaving}
-            className="px-4 py-2 bg-[#303027] hover:bg-[#6d6d6d] disabled:bg-[#303027] disabled:cursor-not-allowed text-[#efefef] border border-[#6d6d6d] rounded transition-colors"
+            className="px-4 py-2 bg-[#303027] hover:bg-[#6d6d6d] disabled:bg-[#303027] disabled:cursor-not-allowed text-[#efefef] border border-[#6d6d6d] rounded transition-colors text-sm"
           >
             キャンセル
           </button>
           <button
             onClick={handleSubmit}
             disabled={isSaving}
-            className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#6d6d6d] disabled:cursor-not-allowed text-[#efefef] hover:text-[#303027] rounded transition-colors flex items-center gap-2"
+            className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] disabled:bg-[#6d6d6d] disabled:cursor-not-allowed text-[#efefef] hover:text-[#303027] rounded transition-colors flex items-center justify-center gap-2 text-sm"
           >
             {isSaving ? (
               <>

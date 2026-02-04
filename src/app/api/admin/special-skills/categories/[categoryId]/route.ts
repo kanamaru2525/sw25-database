@@ -18,7 +18,7 @@ export async function PUT(
         order: data.order,
       },
       include: {
-        customFields: {
+        fields: {
           orderBy: { order: 'asc' },
         },
       },
@@ -47,8 +47,19 @@ export async function DELETE(
     const categoryId = params.categoryId
 
     // カテゴリーに紐づくデータがあるかチェック
+    const category = await prisma.skillCategoryConfig.findUnique({
+      where: { id: categoryId },
+    })
+
+    if (!category) {
+      return NextResponse.json(
+        { error: 'カテゴリーが見つかりません' },
+        { status: 404 }
+      )
+    }
+
     const skillCount = await prisma.specialSkill.count({
-      where: { categoryCode: categoryId as any },
+      where: { categoryCode: category.code },
     })
 
     if (skillCount > 0) {

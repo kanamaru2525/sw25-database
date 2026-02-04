@@ -16,7 +16,7 @@ export async function PUT(
       data: {
         fieldKey: data.fieldKey,
         fieldLabel: data.fieldLabel,
-        fieldType: data.fieldType,
+        fieldType: typeof data.fieldType === 'string' ? data.fieldType.toLowerCase() : data.fieldType,
         placeholder: data.placeholder || null,
         options: data.options || null,
         order: data.order,

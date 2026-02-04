@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react'
 
-type SkillCategory = 'ALL' | 'ENHANCER' | 'BARD_SONG' | 'BARD_FINALE' | 'RIDER' | 'ALCHEMIST' | 'GEOMANCER' | 'WARLEADER_KOUHAI' | 'WARLEADER_JINRITSU' | 'DARKHUNTER'
-type RegulationType = 'ALL' | 'TYPE_I' | 'TYPE_II' | 'TYPE_III' | 'DX' | 'ET' | 'ML' | 'MA' | 'BM' | 'AL' | 'RL' | 'BR' | 'BS' | 'AB' | 'BI' | 'DD' | 'US' | 'TS'
+type SkillCategory = 'ALL' | string
 
 interface SpecialSkill {
   id: string
@@ -40,39 +39,11 @@ interface SearchResult {
     totalPages: number
   }
 }
-
-const SKILL_CATEGORY_LABELS: Record<SkillCategory, string> = {
-  ALL: 'すべて',
-  ENHANCER: '練技',
-  BARD_SONG: '呪歌',
-  BARD_FINALE: '終律',
-  RIDER: '騎芸',
-  ALCHEMIST: '賦術',
-  GEOMANCER: '相域',
-  WARLEADER_KOUHAI: '鼓吠',
-  WARLEADER_JINRITSU: '陣率',
-  DARKHUNTER: '操気',
-}
-
-const REGULATION_LABELS: Record<RegulationType, string> = {
-  ALL: 'すべて',
-  TYPE_I: 'Ⅰ',
-  TYPE_II: 'Ⅱ',
-  TYPE_III: 'Ⅲ',
-  DX: 'DX',
-  ET: 'ET',
-  ML: 'ML',
-  MA: 'MA',
-  BM: 'BM',
-  AL: 'AL',
-  RL: 'RL',
-  BR: 'BR',
-  BS: 'BS',
-  AB: 'AB',
-  BI: 'BI',
-  DD: 'DD',
-  US: 'US',
-  TS: 'TS',
+interface SkillCategoryConfig {
+  id: string
+  code: string
+  name: string
+  order: number
 }
 
 export function SpecialSkillSearch() {
@@ -86,6 +57,7 @@ export function SpecialSkillSearch() {
   const [error, setError] = useState<string>('')
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [regulations, setRegulations] = useState<Array<{ code: string; name: string }>>([])
+  const [categories, setCategories] = useState<SkillCategoryConfig[]>([])
   const [page, setPage] = useState(1)
 
   // プリセットを取得
@@ -121,9 +93,28 @@ export function SpecialSkillSearch() {
     fetchRegulations()
   }, [])
 
+  // カテゴリーを取得
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('/api/admin/special-skills/categories')
+        const data = await response.json()
+        setCategories(Array.isArray(data.categories) ? data.categories : [])
+      } catch (error) {
+        console.error('Failed to fetch categories:', error)
+        setCategories([])
+      }
+    }
+    fetchCategories()
+  }, [])
+
+  const getCategoryLabel = (code: string) => {
+    return categories.find((c) => c.code === code)?.name || code
+  }
+
   const handleCopy = async (skill: SpecialSkill) => {
     const regulationName = regulations.find((r) => r.code === skill.regulation)?.name || skill.regulation
-    const categoryName = skill.category?.name || SKILL_CATEGORY_LABELS[skill.categoryCode as SkillCategory] || skill.categoryCode
+    const categoryName = skill.category?.name || getCategoryLabel(skill.categoryCode)
     const text = `${skill.name}
 ${categoryName} Lv.${skill.level ?? '-'} ${regulationName}${skill.duration ? ` / 持続時間:${skill.duration}` : ''}${skill.resistance ? ` / 抵抗:${skill.resistance}` : ''}${skill.cost ? ` / 消費:${skill.cost}` : ''}${skill.attribute ? ` / 属性:${skill.attribute}` : ''}${skill.target ? ` / 対象:${skill.target}` : ''}${skill.rangeShape ? ` / 射程/形状:${skill.rangeShape}` : ''}`
 
@@ -199,9 +190,10 @@ ${categoryName} Lv.${skill.level ?? '-'} ${regulationName}${skill.duration ? ` /
               onChange={(e) => setCategory(e.target.value as SkillCategory)}
               className="w-full px-3 py-2 bg-[#303027] border border-[#6d6d6d] rounded-lg text-[#efefef] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d]"
             >
-              {Object.entries(SKILL_CATEGORY_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
+              <option value="ALL">すべて</option>
+              {categories.map((cat) => (
+                <option key={cat.code} value={cat.code}>
+                  {cat.name}
                 </option>
               ))}
             </select>
@@ -304,7 +296,7 @@ ${categoryName} Lv.${skill.level ?? '-'} ${regulationName}${skill.duration ? ` /
                     </h3>
                     <div className="flex gap-3 text-sm text-slate-400">
                       <span className="inline-flex items-center px-2 py-1 bg-purple-500/20 text-purple-300 rounded">
-                        {skill.category?.name || SKILL_CATEGORY_LABELS[skill.categoryCode as SkillCategory] || skill.categoryCode}
+                        {skill.category?.name || getCategoryLabel(skill.categoryCode)}
                       </span>
                       <span>Lv.{skill.level ?? '-'}</span>
                       <span>{regulations.find((r) => r.code === skill.regulation)?.name || skill.regulation}</span>

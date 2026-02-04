@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { prisma } from '@/lib/prisma'
-import { Prisma } from '@prisma/client'
+import { Prisma, SpellType } from '@prisma/client'
 
 export async function GET(request: NextRequest) {
   try {
@@ -43,13 +43,22 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '50')
 
+    // デバッグログ：妖精魔法の検索パラメータ
+    if (basicFairyMaxLevel) {
+      console.log('[API /spells] 妖精魔法検索パラメータ')
+      console.log('  basicFairyMaxLevel:', basicFairyMaxLevel)
+      console.log('  fairyAttributes:', fairyAttributes)
+      console.log('  includeSpecialFairy:', includeSpecialFairy)
+      console.log('  maxSpecialRank:', maxSpecialRank)
+    }
+
     const where: Prisma.SpellWhereInput = {}
 
     if (spellTypes.length > 0) {
       const typeConditions: Prisma.SpellWhereInput[] = []
       
       spellTypes.forEach((st, idx) => {
-        const condition: Prisma.SpellWhereInput = { type: st.type as any }
+        const condition: Prisma.SpellWhereInput = { type: st.type as SpellType }
 
         // 秘奥魔法の処理
         if (st.type === 'HIOU') {
@@ -66,21 +75,16 @@ export async function GET(request: NextRequest) {
         // 妖精魔法の特殊処理
         else if (st.type === 'YOSEI') {
           const fairyConditions: Prisma.SpellWhereInput[] = []
+          
           // フロントエンドから送られてきた「技能レベル（生レベル）」を優先
-          const rawSkillLevel = basicFairyMaxLevel ? parseInt(basicFairyMaxLevel) : st.level;
+          const rawSkillLevel = basicFairyMaxLevel ? parseInt(basicFairyMaxLevel) : st.level
 
-          // 1. 基本妖精魔法: 契約属性に関わらず常に表示
+          // 1. 基本妖精魔法: 選択されているレベルと等しいものを常に表示
+          // 条件: fairyAttributes に「基本」を含む
           if (rawSkillLevel !== undefined) {
             fairyConditions.push({
               level: { lte: rawSkillLevel },
-              OR: [
-                { attribute: { contains: '基本', mode: 'insensitive' } },
-                // 属性が空、かつ fairyAttributes も空の場合を基本魔法として扱う
-                { AND: [
-                  { attribute: null },
-                  { fairyAttributes: { isEmpty: true } }
-                ]}
-              ]
+              fairyAttributes: { has: '基本' }
             })
           }
 
@@ -92,16 +96,19 @@ export async function GET(request: NextRequest) {
             })
           }
           
-          // 3. 特殊妖精魔法: 6属性契約時のみ表示
+          // 3. 特殊妖精魔法: 6属性契約時のみ、指定されているランクに従う
           if (includeSpecialFairy && maxSpecialRank) {
             fairyConditions.push({
               level: { lte: parseInt(maxSpecialRank) },
-              attribute: { contains: '特殊', mode: 'insensitive' }
+              fairyAttributes: { has: '特殊' }
             })
           }
 
           if (fairyConditions.length > 0) {
-            condition.OR = fairyConditions
+            // type と OR を AND で結合
+            condition.AND = [
+              { OR: fairyConditions }
+            ]
           } else if (st.level !== undefined) {
             condition.level = { lte: st.level }
           }
@@ -113,9 +120,13 @@ export async function GET(request: NextRequest) {
 
         // 神聖魔法の処理
         if (st.type === 'SHINSEI' && deity) {
-          condition.AND = [
-            { OR: [{ deity: deity }, { deity: null }, { deity: '' }] }
-          ]
+          if (condition.AND) {
+            (condition.AND as Prisma.SpellWhereInput[]).push({ OR: [{ deity: deity }, { deity: null }, { deity: '' }] })
+          } else {
+            condition.AND = [
+              { OR: [{ deity: deity }, { deity: null }, { deity: '' }] }
+            ]
+          }
         }
         
         typeConditions.push(condition)
@@ -125,7 +136,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (regulations.length > 0) {
-      where.regulation = { in: regulations as any }
+      where.regulation = { in: regulations }
     }
 
     if (nameParam) {
@@ -141,6 +152,27 @@ export async function GET(request: NextRequest) {
       }),
       prisma.spell.count({ where }),
     ])
+
+    // デバッグログ：検索結果
+    if (basicFairyMaxLevel) {
+      const basicCount = spells.filter(s => s.fairyAttributes.includes('基本')).length
+      const attributeCount = spells.filter(s => s.fairyAttributes.length > 0 && !s.fairyAttributes.includes('基本') && !s.fairyAttributes.includes('特殊')).length
+      const specialCount = spells.filter(s => s.fairyAttributes.includes('特殊')).length
+      console.log('[API /spells] 検索結果')
+      console.log('  合計件数:', total)
+      console.log('  取得件数:', spells.length)
+      console.log('  基本魔法:', basicCount)
+      console.log('  属性魔法:', attributeCount)
+      console.log('  特殊魔法:', specialCount)
+      
+      // データベースのサンプル魔法を表示
+      if (spells.length > 0) {
+        console.log('  [サンプル魔法データ]')
+        spells.slice(0, 3).forEach(s => {
+          console.log(`    - ${s.name}: attribute="${s.attribute}", fairyAttributes=[${s.fairyAttributes.join(', ')}]`)
+        })
+      }
+    }
 
     return NextResponse.json({
       spells,

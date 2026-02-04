@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 
 type ItemType = 'weapon' | 'armor' | 'accessory'
 type Rank = 'ALL' | 'B' | 'A' | 'S' | 'SS'
-type RegulationType = 'ALL' | 'TYPE_I' | 'TYPE_II' | 'TYPE_III' | 'DX' | 'ET' | 'ML' | 'MA' | 'BM' | 'AL' | 'RL' | 'BR' | 'BS' | 'AB' | 'BI' | 'DD' | 'US' | 'TS'
 
 interface Weapon {
   id: string
@@ -79,27 +78,6 @@ const RANK_LABELS: Record<Rank, string> = {
   SS: 'SS',
 }
 
-const REGULATION_LABELS: Record<RegulationType, string> = {
-  ALL: 'すべて',
-  TYPE_I: 'Ⅰ',
-  TYPE_II: 'Ⅱ',
-  TYPE_III: 'Ⅲ',
-  DX: 'DX',
-  ET: 'ET',
-  ML: 'ML',
-  MA: 'MA',
-  BM: 'BM',
-  AL: 'AL',
-  RL: 'RL',
-  BR: 'BR',
-  BS: 'BS',
-  AB: 'AB',
-  BI: 'BI',
-  DD: 'DD',
-  US: 'US',
-  TS: 'TS',
-}
-
 const WEAPON_CATEGORIES = [
   'ソード',
   'アックス',
@@ -157,6 +135,11 @@ export function ItemSearch() {
   const [regulations, setRegulations] = useState<Array<{ code: string; name: string }>>([])
   const [page, setPage] = useState(1)
 
+  const getRegulationLabel = (code: string) => {
+    if (code === 'ALL') return 'すべて'
+    return regulations.find((r) => r.code === code)?.name || code
+  }
+
   // プリセットを取得
   useEffect(() => {
     const fetchPresets = async () => {
@@ -191,7 +174,7 @@ export function ItemSearch() {
   }, [])
 
   const handleCopy = async (item: Item) => {
-    const regulationDisplay = REGULATION_LABELS[item.regulation as RegulationType] || item.regulation
+    const regulationDisplay = getRegulationLabel(item.regulation)
     let text = `${item.name}\n`
     
     if (item.itemType === 'weapon') {
@@ -489,7 +472,7 @@ export function ItemSearch() {
                           <span>ランク{item.rank}</span>
                         </>
                       )}
-                      <span>{REGULATION_LABELS[item.regulation as RegulationType] || item.regulation}</span>
+                      <span>{getRegulationLabel(item.regulation)}</span>
                       <span className="text-[#6d6d6d]">{item.page}</span>
                     </div>
                   </div>

@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
       include: {
         category: {
           include: {
-            customFields: {
+            fields: {
               orderBy: { order: 'asc' },
             },
           },
@@ -67,6 +67,18 @@ export async function POST(request: NextRequest) {
     
     console.log('Received data:', data)
 
+    let customFields = data.customFields
+    if (typeof data.customFields === 'string') {
+      try {
+        customFields = JSON.parse(data.customFields)
+      } catch (parseError) {
+        return NextResponse.json(
+          { error: 'customFieldsのJSONが不正です' },
+          { status: 400 }
+        )
+      }
+    }
+
     const skill = await prisma.specialSkill.create({
       data: {
         categoryCode: data.category,
@@ -80,9 +92,9 @@ export async function POST(request: NextRequest) {
         rangeShape: data.rangeShape || null,
         summary: data.summary,
         page: data.page,
-        regulation: data.regulation || 'TYPE_I', // 空文字列の場合はデフォルト値を設定
+        regulation: data.regulation || '', // 空文字列の場合はデフォルト値を設定
         // カスタムフィールド（JSON形式）
-        customFields: data.customFields || null,
+        customFields: customFields || null,
       },
     })
 

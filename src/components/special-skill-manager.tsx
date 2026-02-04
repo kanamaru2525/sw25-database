@@ -3,18 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
-type SkillCategory =
-  | 'ENHANCER'
-  | 'BARD_SONG'
-  | 'BARD_FINALE'
-  | 'RIDER'
-  | 'ALCHEMIST'
-  | 'GEOMANCER'
-  | 'WARLEADER_KOUHAI'
-  | 'WARLEADER_JINRITSU'
-  | 'DARKHUNTER'
-
-type FieldType = 'BOOLEAN' | 'TEXT' | 'NUMBER' | 'SELECT' | 'TEXTAREA'
+type FieldType = string
 
 interface SkillFieldConfig {
   id: string
@@ -23,22 +12,22 @@ interface SkillFieldConfig {
   fieldLabel: string
   fieldType: FieldType
   placeholder: string | null
-  options: any
+  options: Record<string, string | number> | null
   order: number
   required: boolean
 }
 
 interface SkillCategoryConfig {
   id: string
-  code: SkillCategory
+  code: string
   name: string
   order: number
-  customFields: SkillFieldConfig[]
+  fields: SkillFieldConfig[]
 }
 
 interface SpecialSkill {
   id: string
-  categoryCode: SkillCategory
+  categoryCode: string
   level: number | null
   name: string
   duration: string | null
@@ -50,7 +39,7 @@ interface SpecialSkill {
   summary: string
   page: string
   regulation: string
-  customFields: Record<string, any> | null
+  customFields: Record<string, string | number | boolean | null> | null
   category?: SkillCategoryConfig
 }
 
@@ -71,7 +60,7 @@ export default function SpecialSkillManager() {
   } | null>(null)
 
   const [formData, setFormData] = useState<{
-    category: SkillCategory
+    category: string
     level: number | null
     name: string
     duration: string
@@ -83,7 +72,7 @@ export default function SpecialSkillManager() {
     summary: string
     page: string
     regulation: string
-    customFields: Record<string, any>
+    customFields: Record<string, string | number | boolean | null>
   }>({
     category: 'ENHANCER',
     level: null,
@@ -111,7 +100,7 @@ export default function SpecialSkillManager() {
       const response = await fetch('/api/regulations')
       if (response.ok) {
         const data = await response.json()
-        setRegulations(data.regulations.map((r: any) => ({ code: r.code, name: r.name })))
+        setRegulations(data.regulations.map((r: {code: string; name: string}) => ({ code: r.code, name: r.name })))
       }
     } catch (error) {
       console.error('Failed to fetch regulations:', error)
@@ -128,6 +117,12 @@ export default function SpecialSkillManager() {
       const response = await fetch('/api/admin/special-skills/categories')
       const data = await response.json()
       setCategories(data.categories)
+      if (!formData.category && Array.isArray(data.categories) && data.categories.length > 0) {
+        setFormData((prev) => ({
+          ...prev,
+          category: data.categories[0].code,
+        }))
+      }
     } catch (error) {
       console.error('Failed to fetch categories:', error)
       showToast('カテゴリー設定の取得に失敗しました', 'error')
@@ -156,10 +151,12 @@ export default function SpecialSkillManager() {
 
   useEffect(() => {
     fetchCategories()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
     fetchSkills()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, categoryFilter, regulationFilter])
 
   const handleSearch = (value: string) => {
@@ -169,7 +166,7 @@ export default function SpecialSkillManager() {
   // 選択されたカテゴリーのフィールド設定を取得
   const getSelectedCategoryFields = () => {
     const category = categories.find((c) => c.code === formData.category)
-    return category?.customFields || []
+    return category?.fields || []
   }
 
   const openModal = (skill?: SpecialSkill) => {
@@ -193,7 +190,7 @@ export default function SpecialSkillManager() {
     } else {
       setEditingSkill(null)
       setFormData({
-        category: 'ENHANCER',
+        category: categories[0]?.code || '',
         level: null,
         name: '',
         duration: '',
@@ -215,7 +212,7 @@ export default function SpecialSkillManager() {
     setIsModalOpen(false)
     setEditingSkill(null)
     setFormData({
-      category: 'ENHANCER',
+      category: categories[0]?.code || '',
       level: null,
       name: '',
       duration: '',
@@ -232,7 +229,7 @@ export default function SpecialSkillManager() {
   }
 
   // カスタムフィールドの値を更新
-  const updateCustomField = (fieldKey: string, value: any) => {
+  const updateCustomField = (fieldKey: string, value: string | number | boolean | null) => {
     setFormData({
       ...formData,
       customFields: {
@@ -357,15 +354,11 @@ export default function SpecialSkillManager() {
             className="px-4 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded-lg text-[#efefef] focus:outline-none focus:ring-2 focus:ring-[#6d6d6d]"
           >
             <option value="ALL">すべてのレギュレーション</option>
-            <option value="TYPE_I">Ⅰ</option>
-            <option value="TYPE_II">Ⅱ</option>
-            <option value="TYPE_III">Ⅲ</option>
-            <option value="DX">DX</option>
-            <option value="ET">ET</option>
-            <option value="ML">ML</option>
-            <option value="MA">MA</option>
-            <option value="BM">BM</option>
-            <option value="AL">AL</option>
+            {regulations.map((reg) => (
+              <option key={reg.code} value={reg.code}>
+                {reg.code} - {reg.name}
+              </option>
+            ))}
           </select>
         </div>
       </div>
@@ -400,7 +393,9 @@ export default function SpecialSkillManager() {
                     <td className="px-4 py-3 text-[#6d6d6d]">
                       {skill.rangeShape || '-'}
                     </td>
-                    <td className="px-4 py-3 text-[#6d6d6d]">{skill.regulation}</td>
+                    <td className="px-4 py-3 text-[#6d6d6d]">
+                      {regulations.find((r) => r.code === skill.regulation)?.name || skill.regulation}
+                    </td>
                     <td className="px-4 py-3 text-right">
                       <button
                         onClick={() => openModal(skill)}
@@ -456,7 +451,7 @@ export default function SpecialSkillManager() {
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        category: e.target.value as SkillCategory,
+                        category: e.target.value,
                         customFields: {}, // カテゴリー変更時にカスタムフィールドをクリア
                       })
                     }
@@ -609,8 +604,9 @@ export default function SpecialSkillManager() {
                 {/* カテゴリー別カスタムフィールド（動的生成） */}
                 {getSelectedCategoryFields().map((field) => {
                   const value = formData.customFields[field.fieldKey]
+                  const fieldType = (field.fieldType || '').toString().toLowerCase()
 
-                  if (field.fieldType === 'BOOLEAN') {
+                  if (fieldType === 'boolean') {
                     return (
                       <div key={field.id}>
                         <label className="block text-sm font-medium text-[#efefef] mb-2">
@@ -636,7 +632,7 @@ export default function SpecialSkillManager() {
                     )
                   }
 
-                  if (field.fieldType === 'NUMBER') {
+                  if (fieldType === 'number') {
                     return (
                       <div key={field.id}>
                         <label className="block text-sm font-medium text-[#efefef] mb-2">
@@ -645,7 +641,7 @@ export default function SpecialSkillManager() {
                         </label>
                         <input
                           type="number"
-                          value={value ?? ''}
+                          value={typeof value === 'number' ? value : ''}
                           onChange={(e) =>
                             updateCustomField(
                               field.fieldKey,
@@ -660,7 +656,7 @@ export default function SpecialSkillManager() {
                     )
                   }
 
-                  if (field.fieldType === 'TEXTAREA') {
+                  if (fieldType === 'textarea') {
                     return (
                       <div key={field.id} className="col-span-2">
                         <label className="block text-sm font-medium text-[#efefef] mb-2">
@@ -668,7 +664,7 @@ export default function SpecialSkillManager() {
                           {field.required && ' *'}
                         </label>
                         <textarea
-                          value={value || ''}
+                          value={typeof value === 'string' ? value : ''}
                           onChange={(e) =>
                             updateCustomField(field.fieldKey, e.target.value)
                           }
@@ -681,7 +677,37 @@ export default function SpecialSkillManager() {
                     )
                   }
 
-                  // TEXT または SELECT
+                  if (fieldType === 'select') {
+                    const options = Array.isArray(field.options?.values)
+                      ? field.options.values
+                      : Array.isArray(field.options)
+                        ? field.options
+                        : []
+
+                    return (
+                      <div key={field.id}>
+                        <label className="block text-sm font-medium text-[#efefef] mb-2">
+                          {field.fieldLabel}
+                          {field.required && ' *'}
+                        </label>
+                        <select
+                          value={typeof value === 'string' ? value : ''}
+                          onChange={(e) => updateCustomField(field.fieldKey, e.target.value)}
+                          className="w-full px-3 py-2 bg-[#303027]/50 border border-[#6d6d6d] rounded text-[#efefef]"
+                          required={field.required}
+                        >
+                          <option value="">-</option>
+                          {options.map((opt: string) => (
+                            <option key={opt} value={opt}>
+                              {opt}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )
+                  }
+
+                  // TEXT
                   return (
                     <div key={field.id}>
                       <label className="block text-sm font-medium text-[#efefef] mb-2">
@@ -690,7 +716,7 @@ export default function SpecialSkillManager() {
                       </label>
                       <input
                         type="text"
-                        value={value || ''}
+                          value={typeof value === 'string' ? value : ''}
                         onChange={(e) =>
                           updateCustomField(field.fieldKey, e.target.value)
                         }

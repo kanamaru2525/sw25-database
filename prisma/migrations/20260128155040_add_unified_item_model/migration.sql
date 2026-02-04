@@ -38,7 +38,7 @@ INSERT INTO "Item" (
     "price", "summary", "page", "regulation"
 )
 SELECT 
-    id, 'WEAPON'::ItemType, name, category, rank, usage, "minStrength",
+    id, 'WEAPON'::"ItemType", name, category, rank, usage, "minStrength",
     hit, power, critical, "extraDamage", range,
     price, summary, page, regulation
 FROM "Weapon";
@@ -50,7 +50,7 @@ INSERT INTO "Item" (
     "price", "summary", "page", "regulation"
 )
 SELECT 
-    id, 'ARMOR'::ItemType, name, category, rank, usage, "minStrength",
+    id, 'ARMOR'::"ItemType", name, category, rank, usage, "minStrength",
     evasion, defense,
     price, summary, page, regulation
 FROM "Armor";
@@ -61,6 +61,6 @@ INSERT INTO "Item" (
     "price", "summary", "page", "regulation"
 )
 SELECT 
-    id, 'ACCESSORY'::ItemType, name, usage::text,
+    id, 'ACCESSORY'::"ItemType", name, usage::text,
     price, summary, page, regulation
 FROM "Accessory";

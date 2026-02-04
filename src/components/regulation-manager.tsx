@@ -99,12 +99,20 @@ export function RegulationManager() {
         >
           ← 管理者画面に戻る
         </Link>
-        <button
-          onClick={() => setIsCreating(true)}
-          className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] text-[#efefef] hover:text-[#303027] rounded-lg transition-colors"
-        >
-          レギュレーションを追加
-        </button>
+        <div className="space-x-2 flex">
+          <Link
+            href="/admin/import/regulations"
+            className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] text-[#efefef] hover:text-[#303027] rounded-lg transition-colors"
+          >
+            CSVインポート
+          </Link>
+          <button
+            onClick={() => setIsCreating(true)}
+            className="px-4 py-2 bg-[#6d6d6d] hover:bg-[#efefef] text-[#efefef] hover:text-[#303027] rounded-lg transition-colors"
+          >
+            レギュレーションを追加
+          </button>
+        </div>
       </div>
 
       {/* トースト通知 */}

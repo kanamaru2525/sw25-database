@@ -6,7 +6,7 @@ export async function GET() {
   try {
     const categories = await prisma.skillCategoryConfig.findMany({
       include: {
-        customFields: {
+        fields: {
           orderBy: { order: 'asc' },
         },
       },

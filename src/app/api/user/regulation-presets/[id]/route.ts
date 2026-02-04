@@ -3,16 +3,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { prisma } from '@/lib/prisma'
 
-// マップ値をenum値に変換
-const mapToEnumValue = (code: string): string => {
-  const mapping: Record<string, string> = {
-    'Ⅰ': 'TYPE_I',
-    'Ⅱ': 'TYPE_II',
-    'Ⅲ': 'TYPE_III',
-  }
-  return mapping[code] || code
-}
-
 // PUT: プリセット更新
 export async function PUT(
   request: NextRequest,
@@ -25,6 +15,13 @@ export async function PUT(
       return NextResponse.json(
         { error: '認証が必要です' },
         { status: 401 }
+      )
+    }
+
+    if (!session.user.id) {
+      return NextResponse.json(
+        { error: 'ユーザー ID が見つかりません' },
+        { status: 400 }
       )
     }
 
@@ -44,22 +41,20 @@ export async function PUT(
       )
     }
 
-    // マップ値をenum値に変換
-    const enumRegulations = data.regulations.map(mapToEnumValue)
-
     const preset = await prisma.regulationPreset.update({
       where: { id },
       data: {
         name: data.name,
-        regulations: enumRegulations as any,
+        regulations: data.regulations || [],
       },
     })
 
     return NextResponse.json(preset)
   } catch (error) {
     console.error('Failed to update preset:', error)
+    const errorMessage = error instanceof Error ? error.message : 'プリセットの更新に失敗しました'
     return NextResponse.json(
-      { error: 'プリセットの更新に失敗しました' },
+      { error: errorMessage },
       { status: 500 }
     )
   }

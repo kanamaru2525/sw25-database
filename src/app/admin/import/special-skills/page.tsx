@@ -46,10 +46,10 @@ export default async function SpecialSkillsImportPage() {
           description="その他技能データ（練技、呆歌、騎芸など）をCSVファイルから一括登録します。"
           sampleHeaders={sampleHeaders}
           fieldNotes={[
-            { field: 'categoryCode', note: 'ENHANCER, BARD_SONG, BARD_FINALE, RIDER, ALCHEMIST, GEOMANCER, WARLEADER_KOUHAI, WARLEADER_JINRITSU, DARKHUNTER' },
+            { field: 'categoryCode', note: '管理画面のカテゴリー設定で登録したコードを指定' },
             { field: 'level', note: '技能レベル。数値または空欄' },
             { field: 'customFields', note: 'カテゴリ固有のフィールド。JSON形式（例: {"hasSinging":true,"condition":"なし"}）。空欄可' },
-            { field: 'regulation', note: 'Ⅰ, Ⅱ, Ⅲ, DX, ET, ML, MA, BM, AL, RL, BR, BS, AB, BI, DD, US, TS, AZ' }
+             { field: 'regulation', note: '管理画面で登録したレギュレーションのコードまたは名称' }
           ]}
         />
       </main>

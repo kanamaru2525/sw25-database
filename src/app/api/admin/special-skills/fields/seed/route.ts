@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { SkillCategory, FieldType } from '@prisma/client'
 
 // POST: カスタムフィールドを一括作成（初期化用）
 export async function POST() {
@@ -11,18 +10,18 @@ export async function POST() {
     const fieldDefinitions = [
       // 1. 練技 (ENHANCER) - 共通フィールドのみなのでカスタムフィールドなし
       {
-        categoryCode: SkillCategory.ENHANCER,
+        categoryCode: 'ENHANCER',
         fields: [],
       },
       
       // 2. 呪歌 (BARD_SONG)
       {
-        categoryCode: SkillCategory.BARD_SONG,
+        categoryCode: 'BARD_SONG',
         fields: [
           {
             fieldKey: 'hasSinging',
             fieldLabel: '歌唱',
-            fieldType: FieldType.SELECT,
+            fieldType: 'select',
             placeholder: null,
             options: { values: ['有', '無'] },
             order: 1,
@@ -31,7 +30,7 @@ export async function POST() {
           {
             fieldKey: 'pet',
             fieldLabel: 'ペット',
-            fieldType: FieldType.SELECT,
+            fieldType: 'select',
             placeholder: null,
             options: { values: ['なし', '小鳥', '蛙', '虫'] },
             order: 2,
@@ -40,7 +39,7 @@ export async function POST() {
           {
             fieldKey: 'condition',
             fieldLabel: '条件',
-            fieldType: FieldType.SELECT,
+            fieldType: 'select',
             placeholder: null,
             options: { values: ['なし', '➘N', '♡M', '➚L'] },
             order: 3,
@@ -49,7 +48,7 @@ export async function POST() {
           {
             fieldKey: 'baseNote',
             fieldLabel: '基礎楽素',
-            fieldType: FieldType.SELECT,
+            fieldType: 'select',
             placeholder: null,
             options: { values: ['➘N', '♡M', '➚L'] },
             order: 4,
@@ -58,7 +57,7 @@ export async function POST() {
           {
             fieldKey: 'skillValue',
             fieldLabel: '巧奏値',
-            fieldType: FieldType.NUMBER,
+            fieldType: 'number',
             placeholder: '例: 10',
             options: null,
             order: 5,
@@ -67,7 +66,7 @@ export async function POST() {
           {
             fieldKey: 'additionalNote',
             fieldLabel: '追加楽素',
-            fieldType: FieldType.SELECT,
+            fieldType: 'select',
             placeholder: null,
             options: { values: ['なし', '➘N', '♡M', '➚L'] },
             order: 6,
@@ -78,18 +77,18 @@ export async function POST() {
       
       // 3. 終律 (BARD_FINALE) - 共通フィールドのみ
       {
-        categoryCode: SkillCategory.BARD_FINALE,
+        categoryCode: 'BARD_FINALE',
         fields: [],
       },
       
       // 4. 騎芸 (RIDER)
       {
-        categoryCode: SkillCategory.RIDER,
+        categoryCode: 'RIDER',
         fields: [
           {
             fieldKey: 'prerequisite',
             fieldLabel: '前提',
-            fieldType: FieldType.TEXT,
+            fieldType: 'text',
             placeholder: '例: 騎芸Lv3',
             options: null,
             order: 1,
@@ -98,7 +97,7 @@ export async function POST() {
           {
             fieldKey: 'correspondence',
             fieldLabel: '対応',
-            fieldType: FieldType.TEXT,
+            fieldType: 'text',
             placeholder: null,
             options: null,
             order: 2,
@@ -107,7 +106,7 @@ export async function POST() {
           {
             fieldKey: 'applicablePart',
             fieldLabel: '適用部位',
-            fieldType: FieldType.TEXT,
+            fieldType: 'text',
             placeholder: '例: 頭部、胴体',
             options: null,
             order: 3,
@@ -118,24 +117,24 @@ export async function POST() {
       
       // 5. 賦術 (ALCHEMIST) - 共通フィールドのみ
       {
-        categoryCode: SkillCategory.ALCHEMIST,
+        categoryCode: 'ALCHEMIST',
         fields: [],
       },
       
       // 6. 鎮域 (GEOMANCER) - 共通フィールドのみ
       {
-        categoryCode: SkillCategory.GEOMANCER,
+        categoryCode: 'GEOMANCER',
         fields: [],
       },
       
       // 7. 鼓吠 (WARLEADER_KOUHAI)
       {
-        categoryCode: SkillCategory.WARLEADER_KOUHAI,
+        categoryCode: 'WARLEADER_KOUHAI',
         fields: [
           {
             fieldKey: 'lineage',
             fieldLabel: '系統',
-            fieldType: FieldType.SELECT,
+            fieldType: 'select',
             placeholder: null,
             options: { values: ['鼓舞系', '攻撃系', '回避系', '防御系', '抵抗系'] },
             order: 1,
@@ -144,7 +143,7 @@ export async function POST() {
           {
             fieldKey: 'rank',
             fieldLabel: 'ランク',
-            fieldType: FieldType.TEXT,
+            fieldType: 'text',
             placeholder: '例: A',
             options: null,
             order: 2,
@@ -153,7 +152,7 @@ export async function POST() {
           {
             fieldKey: 'jingiCost',
             fieldLabel: '陣気コスト',
-            fieldType: FieldType.TEXT,
+            fieldType: 'text',
             placeholder: '例: 3',
             options: null,
             order: 3,
@@ -162,7 +161,7 @@ export async function POST() {
           {
             fieldKey: 'jingiAccumulation',
             fieldLabel: '陣気蓄積',
-            fieldType: FieldType.TEXT,
+            fieldType: 'text',
             placeholder: '例: +1',
             options: null,
             order: 4,
@@ -173,12 +172,12 @@ export async function POST() {
       
       // 8. 陣律 (WARLEADER_JINRITSU)
       {
-        categoryCode: SkillCategory.WARLEADER_JINRITSU,
+        categoryCode: 'WARLEADER_JINRITSU',
         fields: [
           {
             fieldKey: 'prerequisite',
             fieldLabel: '前提',
-            fieldType: FieldType.TEXT,
+            fieldType: 'text',
             placeholder: '例: 鼓吠ランクB以上',
             options: null,
             order: 1,
@@ -187,7 +186,7 @@ export async function POST() {
           {
             fieldKey: 'useCondition',
             fieldLabel: '使用条件',
-            fieldType: FieldType.TEXT,
+            fieldType: 'text',
             placeholder: null,
             options: null,
             order: 2,
@@ -196,7 +195,7 @@ export async function POST() {
           {
             fieldKey: 'jingiCost',
             fieldLabel: '陣気コスト',
-            fieldType: FieldType.TEXT,
+            fieldType: 'text',
             placeholder: '例: 5',
             options: null,
             order: 3,
@@ -207,12 +206,12 @@ export async function POST() {
       
       // 9. 操気 (DARKHUNTER) - 共通フィールドのみ（prerequisiteはカスタム）
       {
-        categoryCode: SkillCategory.DARKHUNTER,
+        categoryCode: 'DARKHUNTER',
         fields: [
           {
             fieldKey: 'prerequisite',
             fieldLabel: '前提',
-            fieldType: FieldType.TEXT,
+            fieldType: 'text',
             placeholder: '例: 操気Lv5',
             options: null,
             order: 1,
